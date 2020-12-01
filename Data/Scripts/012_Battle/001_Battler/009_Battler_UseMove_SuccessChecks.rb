@@ -107,10 +107,14 @@ class PokeBattle_Battler
     return true if choice[0]!=:UseMove
     return true if !@battle.internalBattle
     return true if !@battle.pbOwnedByPlayer?(@index)
+    #### SARDINES - Disobedience - START
+      levelLimits = [15, 25, 30, 35, 40, 50, 50, 55, 70, 70, 70, 75, 80, 85, 85]
+      badgelevel = levelLimits[@battle.pbPlayer.numbadges]
+#### SARDINES - Disobedience - END
     disobedient = false
     # Pokémon may be disobedient; calculate if it is
-    badgeLevel = 10*(@battle.pbPlayer.numbadges+1)
-    badgeLevel = PBExperience.maxLevel if @battle.pbPlayer.numbadges>=8
+    #badgeLevel = 10*(@battle.pbPlayer.numbadges+1)
+    #badgeLevel = PBExperience.maxLevel if @battle.pbPlayer.numbadges>=8
     if @pokemon.foreign?(@battle.pbPlayer) && @level>badgeLevel
       a = ((@level+badgeLevel)*@battle.pbRandom(256)/256).floor
       disobedient |= (a>=badgeLevel)
