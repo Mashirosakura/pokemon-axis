@@ -371,10 +371,34 @@ def pbOnStepTaken(eventTriggered)
   $PokemonTemp.encounterTriggered = false   # This info isn't needed
 end
 
-# Start wild encounters while turning on the spot
+# Start wild overworld/mixed encounters while turning on the spot
 Events.onChangeDirection += proc {
   repel = ($PokemonGlobal.repel > 0)
-  pbBattleOnStepTaken(repel) if !$game_temp.in_menu
+  if !$game_temp.in_menu
+    if $game_variables[OVERWORLD_ENCOUNTER_VARIABLE] == 0
+      if INSTANT_WILD_BATTLE_PROPABILITY > 0 && INSTANT_WILD_BATTLE_PROPABILITY < 100
+        $game_variables[OVERWORLD_ENCOUNTER_VARIABLE] = INSTANT_WILD_BATTLE_PROPABILITY
+      elsif INSTANT_WILD_BATTLE_PROPABILITY >= 100
+        $game_variables[OVERWORLD_ENCOUNTER_VARIABLE] = 100
+      else
+        $game_variables[OVERWORLD_ENCOUNTER_VARIABLE] = -1
+      end
+    end
+    if $game_variables[OVERWORLD_ENCOUNTER_VARIABLE]>0 && ($game_variables[OVERWORLD_ENCOUNTER_VARIABLE]>=100 || rand(100) < $game_variables[OVERWORLD_ENCOUNTER_VARIABLE])
+      #STANDARD WILDBATTLE
+      pbBattleOnStepTaken(repel)
+    else
+      #OVERWORLD ENCOUNTERS
+      #we choose the tile on which the pokemon appears
+      pos = pbChooseTileOnStepTaken
+      return if !pos
+      #we choose the random encounter
+      encounter,gender,form,isShiny = pbChooseEncounter(pos[0],pos[1],repel)
+      return if !encounter
+      #we generate an random encounter overworld event
+      pbPlaceEncounter(pos[0],pos[1],encounter,gender,form,isShiny)
+    end
+  end
 }
 
 def pbBattleOnStepTaken(repel = false)
@@ -1326,42 +1350,47 @@ end
 #===============================================================================
 # Picking up an item found on the ground
 #===============================================================================
-def pbItemBall(item,quantity=1)
-  item = getID(PBItems,item)
+def Kernel.pbItemBall(item,quantity=1)
+  if item.is_a?(String) || item.is_a?(Symbol)
+    item = getID(PBItems,item)
+  end
   return false if !item || item<=0 || quantity<1
   itemname = (quantity>1) ? PBItems.getNamePlural(item) : PBItems.getName(item)
   pocket = pbGetPocket(item)
   if $PokemonBag.pbStoreItem(item,quantity)   # If item can be picked up
-    meName = (pbIsKeyItem?(item)) ? "Key item get" : "Item get"
     if isConst?(item,PBItems,:LEFTOVERS)
-      pbMessage(_INTL("\\me[{1}]You found some \\c[1]{2}\\c[0]!\\wtnp[30]",meName,itemname))
+      Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You found some \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
     elsif pbIsMachine?(item)   # TM or HM
-      pbMessage(_INTL("\\me[{1}]You found \\c[1]{2} {3}\\c[0]!\\wtnp[30]",meName,itemname,PBMoves.getName(pbGetMachine(item))))
+      Kernel.pbMessage(_INTL("\\me[ME Item 4.ogg]You found \\c[1]{1} {2}\\c[0]!\\wtnp[30]",itemname,PBMoves.getName(pbGetMachine(item))))
+    elsif pbIsMegaStone?(item)
+      Kernel.pbMessage(_INTL("\\me[ME Mega Stone.ogg]You obtained \\c[1]{1}\\c[0]!\\wtnp[30]",PBItems.getName(item)))
     elsif quantity>1
-      pbMessage(_INTL("\\me[{1}]You found {2} \\c[1]{3}\\c[0]!\\wtnp[30]",meName,quantity,itemname))
-    elsif itemname.starts_with_vowel?
-      pbMessage(_INTL("\\me[{1}]You found an \\c[1]{2}\\c[0]!\\wtnp[30]",meName,itemname))
+      Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You found {1} \\c[1]{2}\\c[0]!\\wtnp[30]",quantity,itemname))
+    elsif ['a','e','i','o','u'].include?(itemname[0,1].downcase)
+      Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You found an \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
     else
-      pbMessage(_INTL("\\me[{1}]You found a \\c[1]{2}\\c[0]!\\wtnp[30]",meName,itemname))
+      Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You found a \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
     end
-    pbMessage(_INTL("You put the {1} away\\nin the <icon=bagPocket{2}>\\c[1]{3} Pocket\\c[0].",
+    Kernel.pbMessage(_INTL("You put the {1} away\\nin the <icon=bagPocket{2}>\\c[1]{3} Pocket\\c[0].",
        itemname,pocket,PokemonBag.pocketNames()[pocket]))
     return true
+  else   # Can't add the item
+    if isConst?(item,PBItems,:LEFTOVERS)
+      Kernel.pbMessage(_INTL("You found some \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
+    elsif pbIsMachine?(item)   # TM or HM
+      Kernel.pbMessage(_INTL("You found \\c[1]{1} {2}\\c[0]!\\wtnp[30]",itemname,PBMoves.getName(pbGetMachine(item))))
+    elsif pbIsMegaStone?(item)
+      Kernel.pbMessage(_INTL("You found \\c[1]{1} {2}\\c[0]!\\wtnp[30]",PBItems.getName(item)))
+    elsif quantity>1
+      Kernel.pbMessage(_INTL("You found {1} \\c[1]{2}\\c[0]!\\wtnp[30]",quantity,itemname))
+    elsif ['a','e','i','o','u'].include?(itemname[0,1].downcase)
+      Kernel.pbMessage(_INTL("You found an \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
+    else
+      Kernel.pbMessage(_INTL("You found a \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
+    end
+    Kernel.pbMessage(_INTL("But your Bag is full..."))
+    return false
   end
-  # Can't add the item
-  if isConst?(item,PBItems,:LEFTOVERS)
-    pbMessage(_INTL("You found some \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
-  elsif pbIsMachine?(item)   # TM or HM
-    pbMessage(_INTL("You found \\c[1]{1} {2}\\c[0]!\\wtnp[30]",itemname,PBMoves.getName(pbGetMachine(item))))
-  elsif quantity>1
-    pbMessage(_INTL("You found {1} \\c[1]{2}\\c[0]!\\wtnp[30]",quantity,itemname))
-  elsif itemname.starts_with_vowel?
-    pbMessage(_INTL("You found an \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
-  else
-    pbMessage(_INTL("You found a \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
-  end
-  pbMessage(_INTL("But your Bag is full..."))
-  return false
 end
 
 
@@ -1369,25 +1398,28 @@ end
 #===============================================================================
 # Being given an item
 #===============================================================================
-def pbReceiveItem(item,quantity=1)
-  item = getID(PBItems,item)
+def Kernel.pbReceiveItem(item,quantity=1)
+  if item.is_a?(String) || item.is_a?(Symbol)
+    item = getID(PBItems,item)
+  end
   return false if !item || item<=0 || quantity<1
   itemname = (quantity>1) ? PBItems.getNamePlural(item) : PBItems.getName(item)
   pocket = pbGetPocket(item)
-  meName = (pbIsKeyItem?(item)) ? "Key item get" : "Item get"
   if isConst?(item,PBItems,:LEFTOVERS)
-    pbMessage(_INTL("\\me[{1}]You obtained some \\c[1]{2}\\c[0]!\\wtnp[30]",meName,itemname))
+    Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You obtained some \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
   elsif pbIsMachine?(item)   # TM or HM
-    pbMessage(_INTL("\\me[{1}]You obtained \\c[1]{2} {3}\\c[0]!\\wtnp[30]",meName,itemname,PBMoves.getName(pbGetMachine(item))))
+    Kernel.pbMessage(_INTL("\\me[ME Item 4.ogg]You obtained \\c[1]{1} {2}\\c[0]!\\wtnp[30]",itemname,PBMoves.getName(pbGetMachine(item))))
+  elsif pbIsMegaStone?(item)
+    Kernel.pbMessage(_INTL("\\me[ME Mega Stone.ogg]You obtained \\c[1]{1}\\c[0]!\\wtnp[30]",PBItems.getName(item)))
   elsif quantity>1
-    pbMessage(_INTL("\\me[{1}]You obtained {2} \\c[1]{3}\\c[0]!\\wtnp[30]",meName,quantity,itemname))
-  elsif itemname.starts_with_vowel?
-    pbMessage(_INTL("\\me[{1}]You obtained an \\c[1]{2}\\c[0]!\\wtnp[30]",meName,itemname))
+    Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You obtained {1} \\c[1]{2}\\c[0]!\\wtnp[30]",quantity,itemname))
+  elsif ['a','e','i','o','u'].include?(itemname[0,1].downcase)
+    Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You obtained an \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
   else
-    pbMessage(_INTL("\\me[{1}]You obtained a \\c[1]{2}\\c[0]!\\wtnp[30]",meName,itemname))
+    Kernel.pbMessage(_INTL("\\me[ME Item.ogg]You obtained a \\c[1]{1}\\c[0]!\\wtnp[30]",itemname))
   end
   if $PokemonBag.pbStoreItem(item,quantity)   # If item can be added
-    pbMessage(_INTL("You put the {1} away\\nin the <icon=bagPocket{2}>\\c[1]{3} Pocket\\c[0].",
+    Kernel.pbMessage(_INTL("You put the {1} away\\nin the <icon=bagPocket{2}>\\c[1]{3} Pocket\\c[0].",
        itemname,pocket,PokemonBag.pocketNames()[pocket]))
     return true
   end

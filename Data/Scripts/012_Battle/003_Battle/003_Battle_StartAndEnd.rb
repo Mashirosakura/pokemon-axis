@@ -22,7 +22,7 @@ class PokeBattle_Battle
     #       trainer, it's possible that battlers will be unable to move close
     #       enough to hit each other if there are multiple trainers on each
     #       side.
-    if trainerBattle? && (@sideSizes[0]>2 || @sideSizes[1]>2) &&
+    if trainerBattle? && (@sideSizes[0]>4 || @sideSizes[1]>4) &&
        @player.length>1 && @opponent.length>1
       raise _INTL("Can't have battles larger than 2v2 where both sides have multiple trainers")
     end
@@ -170,6 +170,9 @@ class PokeBattle_Battle
       when 3
         pbDisplayPaused(_INTL("Oh! A wild {1}, {2} and {3} appeared!",foeParty[0].name,
            foeParty[1].name,foeParty[2].name))
+      when 4
+        pbDisplayPaused(_INTL("Oh! A wild {1}, {2}, {3} and {4} appeared!",foeParty[0].name,
+           foeParty[1].name,foeParty[2].name,foeParty[3].name))
       end
     else   # Trainer battle
       case @opponent.length
@@ -181,6 +184,9 @@ class PokeBattle_Battle
       when 3
         pbDisplayPaused(_INTL("You are challenged by {1}, {2} and {3}!",
            @opponent[0].fullname,@opponent[1].fullname,@opponent[2].fullname))
+      when 4
+        pbDisplayPaused(_INTL("You are challenged by {1}, {2}, {3} and {4}!",
+           @opponent[0].fullname,@opponent[1].fullname,@opponent[2].fullname,@opponent[3].fullname))
       end
     end
     # Send out Pokémon (opposing trainers first)
@@ -203,6 +209,9 @@ class PokeBattle_Battle
         when 3
           msg += _INTL("{1} sent out {2}, {3} and {4}!",t.fullname,
              @battlers[sent[0]].name,@battlers[sent[1]].name,@battlers[sent[2]].name)
+        when 4
+          msg += _INTL("{1} sent out {2}, {3}, {4} and {5}!",t.fullname,
+             @battlers[sent[0]].name,@battlers[sent[1]].name,@battlers[sent[2]].name,@battlers[sent[3]].name)
         end
         toSendOut.concat(sent)
       end
@@ -218,6 +227,9 @@ class PokeBattle_Battle
         when 3
           msg += _INTL("Go! {1}, {2} and {3}!",@battlers[sent[0]].name,
              @battlers[sent[1]].name,@battlers[sent[2]].name)
+        when 4
+          msg += _INTL("Go! {1}, {2}, {3} and {4}!",@battlers[sent[0]].name,
+             @battlers[sent[1]].name,@battlers[sent[2]].name,@battlers[sent[3]].name)
         end
         toSendOut.concat(sent)
       end
@@ -244,6 +256,8 @@ class PokeBattle_Battle
       logMsg += "Double "
     elsif @sideSizes[0]==3 && @sideSizes[1]==3
       logMsg += "Triple "
+    elsif @sideSizes[0]==4 && @sideSizes[1]==4
+      logMsg += "Quad "
     else
       logMsg += "#{@sideSizes[0]}v#{@sideSizes[1]} "
     end
@@ -402,6 +416,9 @@ class PokeBattle_Battle
         when 3
           pbDisplayPaused(_INTL("You defeated {1}, {2} and {3}!",@opponent[0].fullname,
              @opponent[1].fullname,@opponent[2].fullname))
+        when 4
+          pbDisplayPaused(_INTL("You defeated {1}, {2}, {3} and {4}!",@opponent[0].fullname,
+             @opponent[1].fullname,@opponent[2].fullname,@opponent[3].fullname))
         end
         @opponent.each_with_index do |_t,i|
           @scene.pbShowOpponent(i)
@@ -430,6 +447,9 @@ class PokeBattle_Battle
           when 3
             pbDisplayPaused(_INTL("You lost against {1}, {2} and {3}!",
                @opponent[0].fullname,@opponent[1].fullname,@opponent[2].fullname))
+          when 4
+            pbDisplayPaused(_INTL("You lost against {1}, {2}, {3} and {4}!",
+               @opponent[0].fullname,@opponent[1].fullname,@opponent[2].fullname,@opponent[3].fullname))
           end
         end
         # Lose money from losing a battle

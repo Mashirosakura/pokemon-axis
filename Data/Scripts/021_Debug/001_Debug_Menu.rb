@@ -333,7 +333,7 @@ def pbDebugMenuActions(cmd="",sprites=nil,viewport=nil)
           pbMessage(_INTL("You only have one Pokémon."))
           next
         end
-        maxVal = (pbCanTripleBattle?) ? 3 : 2
+        maxVal = (pbCanQuadBattle?) ? 4 : 3
         params = ChooseNumberParams.new
         params.setRange(1,maxVal)
         params.setInitialValue(size0)

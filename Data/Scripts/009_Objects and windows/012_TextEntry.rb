@@ -1041,27 +1041,27 @@ class PokemonEntryScene2
     def updateCursorPos
       value=@cursorPos
       if value==PokemonEntryScene2::MODE1   # Upper case
-        @sprite.x=48
+        @sprite.x=48+80
         @sprite.y=120
         @cursortype=1
       elsif value==PokemonEntryScene2::MODE2   # Lower case
-        @sprite.x=112
+        @sprite.x=112+80
         @sprite.y=120
         @cursortype=1
       elsif value==PokemonEntryScene2::MODE3   # Other symbols
-        @sprite.x=176
+        @sprite.x=176+80
         @sprite.y=120
         @cursortype=1
       elsif value==PokemonEntryScene2::BACK   # Back
-        @sprite.x=312
+        @sprite.x=312+80
         @sprite.y=120
         @cursortype=2
       elsif value==PokemonEntryScene2::OK   # OK
-        @sprite.x=392
+        @sprite.x=392+80
         @sprite.y=120
         @cursortype=2
       elsif value>=0
-        @sprite.x=52+32*(value%PokemonEntryScene2::ROWS)
+        @sprite.x=(52+32*(value%PokemonEntryScene2::ROWS))+80
         @sprite.y=180+38*(value/PokemonEntryScene2::ROWS)
         @cursortype=0
       end
@@ -1215,16 +1215,16 @@ class PokemonEntryScene2
       @blanks[i]=0
     }
     @sprites["bottomtab"]=SpriteWrapper.new(@viewport) # Current tab
-    @sprites["bottomtab"].x=22
+    @sprites["bottomtab"].x=100
     @sprites["bottomtab"].y=162
     @sprites["bottomtab"].bitmap=@bitmaps[0+3]
     @sprites["toptab"]=SpriteWrapper.new(@viewport) # Next tab
-    @sprites["toptab"].x=22-504
+    @sprites["toptab"].x=100-592
     @sprites["toptab"].y=162
     @sprites["toptab"].bitmap=@bitmaps[1+3]
     @sprites["controls"]=IconSprite.new(0,0,@viewport)
     @sprites["controls"].setBitmap(_INTL("Graphics/Pictures/Naming/overlay_controls"))
-    @sprites["controls"].x=16
+    @sprites["controls"].x=96
     @sprites["controls"].y=96
     @init=true
     @sprites["overlay"]=BitmapSprite.new(Graphics.width,Graphics.height,@viewport)
@@ -1243,7 +1243,7 @@ class PokemonEntryScene2
   def pbDoUpdateOverlay2
     overlay=@sprites["overlay"].bitmap
     overlay.clear
-    modeIcon=[[_INTL("Graphics/Pictures/Naming/icon_mode"),48+@mode*64,120,@mode*60,0,60,44]]
+    modeIcon=[[_INTL("Graphics/Pictures/Naming/icon_mode"),128+@mode*64,120,@mode*60,0,60,44]]
     pbDrawImagePositions(overlay,modeIcon)
   end
 
@@ -1274,18 +1274,18 @@ class PokemonEntryScene2
     deltaX = 48*20/Graphics.frame_rate
     deltaY = 24*20/Graphics.frame_rate
     loop do
-      if @sprites["bottomtab"].y<414
+      if @sprites["bottomtab"].y<700
         @sprites["bottomtab"].y += deltaY
-        @sprites["bottomtab"].y = 414 if @sprites["bottomtab"].y>414
+        @sprites["bottomtab"].y = 700 if @sprites["bottomtab"].y>700
       end
-      if @sprites["toptab"].x<22
+      if @sprites["toptab"].x<100
         @sprites["toptab"].x += deltaX
-        @sprites["toptab"].x = 22 if @sprites["toptab"].x>22
+        @sprites["toptab"].x = 100 if @sprites["toptab"].x>100
       end
       Graphics.update
       Input.update
       pbUpdate
-      break if @sprites["toptab"].x>=22 && @sprites["bottomtab"].y>=414
+      break if @sprites["toptab"].x>=100 && @sprites["bottomtab"].y>=700
     end
     # Swap top and bottom tab around
     @sprites["toptab"].x, @sprites["bottomtab"].x = @sprites["bottomtab"].x, @sprites["toptab"].x
@@ -1300,7 +1300,7 @@ class PokemonEntryScene2
     newtab = @bitmaps[((@mode+1)%3)+3]
     @sprites["cursor"].visible = true
     @sprites["toptab"].bitmap = newtab
-    @sprites["toptab"].x = 22-504
+    @sprites["toptab"].x = 100-592
     @sprites["toptab"].y = 162
     pbSEPlay("GUI naming tab swap end")
     pbDoUpdateOverlay2

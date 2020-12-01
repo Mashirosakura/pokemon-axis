@@ -476,7 +476,11 @@ def pbTrainerBattleEditor
     end
   }
   if modified && pbConfirmMessage(_INTL("Save changes?"))
-    save_data(trainers,"Data/trainers.dat")
+    if $Trainer.hardmode
+    save_data(trainers,"Data/trainersH.dat")
+    else
+    save_data(trainers,"Data/trainersE.dat")
+    end
     $PokemonTemp.trainersData = nil
     pbConvertTrainerData
   end

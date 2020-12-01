@@ -264,6 +264,20 @@ class PokeBattle_Battler
         pbChangeForm(newForm,_INTL("{1} transformed into its Complete Forme!",pbThis))
       end
     end
+    # Pufferish - Puff Up
+    if isSpecies?(:PUFFERISH) && isConst?(@ability,PBAbilities,:PUFFUP)
+      if @hp=@totalhp || @user.effects[PBEffects::Stockpile] += 1
+        if @form!=1
+          @battle.pbShowAbilitySplash(self,true)
+          @battle.pbHideAbilitySplash(self)
+          pbChangeForm(1,_INTL("{1} deflated!",pbThis))
+        end
+        elsif @form!=0
+          @battle.pbShowAbilitySplash(self,true)
+          @battle.pbHideAbilitySplash(self)
+          pbChangeForm(0,_INTL("{1} puffed up!",pbThis))
+        end
+      end
   end
 
   def pbTransform(target)

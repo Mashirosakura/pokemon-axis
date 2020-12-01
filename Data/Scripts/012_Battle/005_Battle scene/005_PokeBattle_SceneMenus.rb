@@ -244,8 +244,8 @@ class FightMenuDisplay < BattleMenuBase
         button.bitmap = @buttonBitmap.bitmap
         button.x      = self.x+4
         button.x      += (((i%2)==0) ? 0 : @buttonBitmap.width/2-4)
-        button.y      = self.y+6
-        button.y      += (((i/2)==0) ? 0 : BUTTON_HEIGHT-4)
+        button.y      = self.y+4
+        button.y      += (((i/2)==0) ? 0 : BUTTON_HEIGHT)
         button.src_rect.width  = @buttonBitmap.width/2
         button.src_rect.height = BUTTON_HEIGHT
         addSprite("button_#{i}",button)
@@ -459,7 +459,8 @@ class TargetMenuDisplay < BattleMenuBase
     super(viewport)
     @sideSizes = sideSizes
     maxIndex = (@sideSizes[0]>@sideSizes[1]) ? (@sideSizes[0]-1)*2 : @sideSizes[1]*2-1
-    @smallButtons = (@sideSizes.max>2)
+#   @smallButtons = (@sideSizes.max>2)
+    @smallButtons = @sideSizes.max
     self.x = 0
     self.y = Graphics.height-96
     @texts = []
@@ -479,7 +480,9 @@ class TargetMenuDisplay < BattleMenuBase
       button.bitmap = @buttonBitmap.bitmap
       button.src_rect.width  = (@smallButtons) ? CMD_BUTTON_WIDTH_SMALL : @buttonBitmap.width/2
       button.src_rect.height = BUTTON_HEIGHT
-      if @smallButtons
+      if @smallButtons==4
+        button.x    = self.x+252-[0,82,166,250][numButtons-1]
+      elsif @smallButtons==3
         button.x    = self.x+170-[0,82,166][numButtons-1]
       else
         button.x    = self.x+138-[0,116][numButtons-1]

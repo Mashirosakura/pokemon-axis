@@ -17,8 +17,9 @@
 #      added on to the screen height above, only if the border is turned on.
 # * Map view mode (0=original, 1=custom, 2=perspective).
 #===============================================================================
-SCREEN_WIDTH       = 512
-SCREEN_HEIGHT      = 384
+SCREEN_WIDTH       = 672
+SCREEN_HEIGHT      = 480
+MOUNT_SWITCH       = 48
 SCREEN_ZOOM        = 1.0
 BORDER_FULLY_SHOWS = false
 BORDER_WIDTH       = 78
@@ -121,14 +122,14 @@ NUM_BADGES_BOOST_SPATK   = 7
 NUM_BADGES_BOOST_SPDEF   = 7
 NUM_BADGES_BOOST_SPEED   = 3
 FIELD_MOVES_COUNT_BADGES = true
-BADGE_FOR_CUT            = 1
-BADGE_FOR_FLASH          = 2
-BADGE_FOR_ROCKSMASH      = 3
-BADGE_FOR_SURF           = 4
-BADGE_FOR_FLY            = 5
-BADGE_FOR_STRENGTH       = 6
-BADGE_FOR_DIVE           = 7
-BADGE_FOR_WATERFALL      = 8
+BADGE_FOR_CUT            = 0
+BADGE_FOR_FLASH          = 0
+BADGE_FOR_ROCKSMASH      = 0
+BADGE_FOR_SURF           = 5
+BADGE_FOR_FLY            = 11
+BADGE_FOR_STRENGTH       = 9
+BADGE_FOR_DIVE           = 0
+BADGE_FOR_WATERFALL      = 10
 
 #===============================================================================
 # * Whether a move's physical/special category depends on the move itself as in
@@ -155,7 +156,7 @@ SCALED_EXP_FORMULA        = true
 SPLIT_EXP_BETWEEN_GAINERS = false
 ENABLE_CRITICAL_CAPTURES  = false
 GAIN_EXP_FOR_CAPTURE      = true
-MEGA_RINGS                = [:MEGARING, :MEGABRACELET, :MEGACUFF, :MEGACHARM]
+MEGA_RINGS                = [:ZMEGARING, :MEGABRACELET, :MEGACUFF, :MEGACHARM]
 
 #===============================================================================
 # * The names of each pocket of the Bag. Leave the first entry blank.
@@ -229,9 +230,9 @@ NUM_STORAGE_BOXES = 30
 #===============================================================================
 USE_CURRENT_REGION_DEX = false
 def pbDexNames; return [
-  [_INTL("Kanto Pokédex"), 0],
-  [_INTL("Johto Pokédex"), 1],
-  _INTL("National Pokédex")
+   [_INTL("South Azarium Pokédex"),0],
+   [_INTL("North Azarium Pokédex"),1],
+   _INTL("National Pokédex")
 ]; end
 DEX_SHOWS_ALL_FORMS = false
 DEXES_WITH_OFFSETS  = []
@@ -351,3 +352,7 @@ LANGUAGES = [
 #  ["English", "english.dat"],
 #  ["Deutsch", "deutsch.dat"]
 ]
+
+RXMOD       = 160
+RYMOD       = 96
+MOUNTSWITCH = 5000

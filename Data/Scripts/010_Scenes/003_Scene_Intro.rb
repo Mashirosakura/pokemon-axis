@@ -55,7 +55,7 @@ class IntroEventScene < EventScene
     @pic.name = "Graphics/Titles/"+@splash
     @pic.moveOpacity(0,FADE_TICKS,255)
     @pic2.name = "Graphics/Titles/start"
-    @pic2.setXY(0,0,322)
+    @pic2.setXY(0,0,418)
     @pic2.setVisible(0,true)
     @pic2.moveOpacity(0,FADE_TICKS,255)
     pictureWait

@@ -17,16 +17,30 @@ Events.onWildPokemonCreate += proc { |_sender, e|
 # map depend on the levels of Pokémon in the player's party.
 # This is a simple method, and can/should be modified to account for evolutions
 # and other such details.  Of course, you don't HAVE to use this code.
-Events.onWildPokemonCreate += proc { |_sender, e|
-  pokemon = e[0]
-  if $game_map.map_id == 51
-    max_level = PBExperience.maxLevel
-    new_level = pbBalancedLevel($Trainer.party) - 4 + rand(5)   # For variety
-    new_level = 1 if new_level < 1
-    new_level = max_level if new_level > max_level
-    pokemon.level = new_level
+#Events.onWildPokemonCreate += proc { |_sender, e|
+#  pokemon = e[0]
+#  if $game_map.map_id == 51
+#    max_level = PBExperience.maxLevel
+#    new_level = pbBalancedLevel($Trainer.party) - 4 + rand(5)   # For variety
+#    new_level = 1 if new_level < 1
+#    new_level = max_level if new_level > max_level
+#    pokemon.level = new_level
+#    pokemon.calcStats
+#    pokemon.resetMoves
+#  end
+#}
+
+# Changed
+# Set 3 random IVs to 31 for Legendary, Mythical and Ultra Beast mons
+Events.onWildPokemonCreate+=proc {|sender,e|
+  pokemon=e[0]
+  if isLegendaryMythicalOrUltra?(pokemon.species)
+    ivindices = [0,1,2,3,4,5].shuffle[0...3] # => e.g. [2,5,3]
+    for i in 0...3
+      ivindex = ivindices[i]
+      pokemon.iv[ivindex] = 31
+    end
     pokemon.calcStats
-    pokemon.resetMoves
   end
 }
 
@@ -43,3 +57,11 @@ Events.onWildPokemonCreate += proc { |_sender, e|
 #    YOUR CODE HERE
 #  end
 #}
+
+# Make all wild Pokémon have a chance to have their hidden ability.
+Events.onWildPokemonCreate+=proc {|sender,e|
+   pokemon=e[0]
+   if rand(20) < 1
+     pokemon.setAbility(2)
+   end
+}

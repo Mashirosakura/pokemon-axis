@@ -61,8 +61,11 @@ module PBEvolution
   TradeNight        = 57
   TradeItem         = 58
   TradeSpecies      = 59
+  ItemTradeEvo      = 60
+  PotItem1          = 61
+  PotItem2          = 62
 
-  def self.maxValue; return 59; end
+  def self.maxValue; return 62; end
 
   @@evolution_methods = HandlerHash.new(:PBEvolution)
 
@@ -757,5 +760,35 @@ PBEvolution.register(:TradeSpecies, {
   "parameterType" => :PBSpecies,
   "tradeCheck"    => proc { |pkmn, parameter, other_pkmn|
     next pkmn.species == parameter && !other_pkmn.hasItem?(:EVERSTONE)
+  }
+})
+
+PBEvolution.register(:ItemTradeEvo, {
+  "parameterType" => :PBItems,
+  "tradeCheck"    => proc { |pkmn, parameter, other_pkmn|
+    next pkmn.item == parameter
+  },
+  "afterEvolution" => proc { |pkmn, new_species, parameter, evo_species|
+    next false if evo_species != new_species || !pkmn.hasItem?(parameter)
+    pkmn.setItem(0)   # Item is now consumed
+    next true
+  }
+})
+
+PBEvolution.register(:PotItem1, {
+  "parameterType" => :PBItems,
+  "itemCheck"     => proc { |pkmn, parameter, item|
+    next item == parameter
+  }
+})
+
+PBEvolution.register(:PotItem2, {
+  "parameterType" => :PBItems,
+  "itemCheck"     => proc { |pkmn, parameter, item|
+    next item == parameter
+  },
+  "afterEvolution" => proc { |pkmn, new_species, parameter, evo_species|
+    pkmn.form=1
+    next true
   }
 })

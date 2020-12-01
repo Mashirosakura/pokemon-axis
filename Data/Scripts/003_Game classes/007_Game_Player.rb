@@ -184,6 +184,7 @@ class Game_Player < Game_Character
     end
     # If debug mode is ON and Ctrl key was pressed
     return true if $DEBUG and Input.press?(Input::CTRL)
+    return true if $Trainer.tester and Input.press?(Input::CTRL)
     return super
   end
 

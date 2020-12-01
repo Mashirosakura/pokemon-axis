@@ -443,7 +443,11 @@ class TrainerChecker
       return if !hasConst?(PBTrainers,trtype)
       trtype = PBTrainers.const_get(trtype)
     end
-    @trainers = load_data("Data/trainers.dat") if !@trainers
+    if $Trainer.hardmode
+    @trainers = load_data("Data/trainersH.dat") if !@trainers
+    else
+    @trainers = load_data("Data/trainersE.dat") if !@trainers
+    end
     if @trainers
       for trainer in @trainers
         return if trainer[0]==trtype && trainer[1]==trname && trainer[4]==trid
@@ -1124,6 +1128,7 @@ def pbFixEventUse(event,_mapID,mapData)
               end
             end
           end
+=begin
           # If this is the only event command, convert to a full event
           if list.length==2 || (list.length==3 && (list[0].code==250 || list[1].code==250))   # Play SE
             params[5] = 1   # No fade
@@ -1139,6 +1144,7 @@ def pbFixEventUse(event,_mapID,mapData)
             )
             changed = true
           end
+=end
           if deletedRoute
             insertMoveRouteAt.call(list,list.length-1,deletedRoute)
             changed = true

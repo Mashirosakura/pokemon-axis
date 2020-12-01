@@ -1103,7 +1103,7 @@ end
 
 
 #===============================================================================
-# Decreases the user's Speed by 1 stage. (Hammer Arm, Ice Hammer)
+# Decreases the user's Speed by 1 stage. (Hammer Arm, Ice Hammer, Anchor Wings)
 #===============================================================================
 class PokeBattle_Move_03E < PokeBattle_StatDownMove
   def initialize(battle,move)

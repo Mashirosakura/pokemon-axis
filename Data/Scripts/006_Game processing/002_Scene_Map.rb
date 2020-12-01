@@ -30,6 +30,65 @@ class Scene_Map
     $MapFactory.setSceneStarted(self)
     updateSpritesets
   end
+  
+#Button Save
+  def updateSpritesets
+  if Input.trigger?(Input::G) && !$game_player.moving? && @mode.nil?
+	  pbSyncSave
+	  pbSave
+    $game_variables[24]+=1
+	  pbBackupSave
+	  @mode = 0
+	  @vp = Viewport.new(0,0,Graphics.width,Graphics.height)
+	  @vp.z = 100000
+	  @disk = Sprite.new(@vp)
+	  @disk.bitmap = BitmapCache.load_bitmap("Graphics/Pictures/saveDisk")
+	  @disk.x, @disk.y = 8, 8
+	  @disk.opacity = 0
+	  @arrow = Sprite.new(@vp)
+	  @arrow.bitmap = BitmapCache.load_bitmap("Graphics/Pictures/saveArrow")
+	  @arrow.x, @arrow.y = 8, -4
+	  @arrow.opacity = 0
+	end
+	if @mode == 0
+	  @disk.opacity += 16
+	  @mode = 1 if @disk.opacity >= 255
+	end
+	if @mode == 1
+	  @arrow.opacity += 16
+	  @mode = 2 if @arrow.opacity >= 255
+	end
+	if @mode == 2
+	  @arrow.y += 1
+	  @mode = 3 if @arrow.y >= 22
+	end
+	if @mode == 3
+	  @arrow.opacity -= 16
+	  @disk.opacity -= 16
+	  if @disk.opacity <= 0
+		@arrow.dispose
+		@disk.dispose
+		@vp.dispose
+		@mode = nil
+	  end
+	end
+    @spritesets={} if !@spritesets
+    keys=@spritesets.keys.clone
+    for i in keys
+      if !$MapFactory.hasMap?(i)
+        @spritesets[i].dispose if @spritesets[i]
+        @spritesets[i]=nil
+        @spritesets.delete(i)
+      else
+        @spritesets[i].update
+      end
+    end
+    @spritesetglobal.update
+    for map in $MapFactory.maps
+      @spritesets[map.map_id] = Spriteset_Map.new(map) if !@spritesets[map.map_id]
+    end
+    Events.onMapUpdate.trigger(self)
+  end
 
   def disposeSpritesets
     return if !@spritesets
@@ -205,9 +264,9 @@ class Scene_Map
       if $game_temp.name_calling;      call_name
       elsif $game_temp.menu_calling;   call_menu
       elsif $game_temp.debug_calling;  call_debug
-#      elsif $game_temp.battle_calling; call_battle
-#      elsif $game_temp.shop_calling;   call_shop
-#      elsif $game_temp.save_calling;   call_save
+      elsif $game_temp.battle_calling; call_battle
+      elsif $game_temp.shop_calling;   call_shop
+      elsif $game_temp.save_calling;   call_save
       elsif $PokemonTemp.keyItemCalling
         $PokemonTemp.keyItemCalling = false
         $game_player.straighten

@@ -125,6 +125,8 @@ def pbLoadSpeciesData
   return $PokemonTemp.speciesData
 end
 
+
+
 def pbGetSpeciesData(species, form = 0, species_data_type = -1)
   species = getID(PBSpecies, species)
   s = pbGetFSpeciesFromForm(species, form)
@@ -245,7 +247,11 @@ end
 def pbLoadTrainersData
   $PokemonTemp = PokemonTemp.new if !$PokemonTemp
   if !$PokemonTemp.trainersData
-    $PokemonTemp.trainersData = load_data("Data/trainers.dat") || []
+    if $Trainer.hardmode
+    $PokemonTemp.trainersData = load_data("Data/trainersH.dat") || []
+    else
+    $PokemonTemp.trainersData = load_data("Data/trainersE.dat") || []
+    end
   end
   return $PokemonTemp.trainersData
 end

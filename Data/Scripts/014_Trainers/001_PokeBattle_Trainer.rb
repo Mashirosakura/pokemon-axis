@@ -14,6 +14,10 @@ class PokeBattle_Trainer
   attr_accessor :party
   attr_accessor :pokedex    # Whether the Pokédex was obtained
   attr_accessor :pokegear   # Whether the Pokégear was obtained
+  attr_accessor :hardmode
+  attr_accessor :partyplus
+  attr_accessor :gearBirthsigns
+  attr_accessor :tester
   attr_writer   :language
 
   def trainerTypeName   # Name of this trainer type (localized)
@@ -170,12 +174,12 @@ class PokeBattle_Trainer
     ret=0
     if region==-1
       for i in 1..PBSpecies.maxValue
-        ret+=1 if @seen[i]
+        ret+=1 if i > 0 && @seen[i]
       end
     else
       regionlist=pbAllRegionalSpecies(region)
       for i in regionlist
-        ret+=1 if i > 0 && @seen[i]
+        ret+=1 if @seen[i]
       end
     end
     return ret
@@ -253,6 +257,10 @@ class PokeBattle_Trainer
     @metaID            = 0
     @outfit            = 0
     @pokegear          = false
+    @hardmode          = false
+    @partyplus         = false
+    @gearBirthsigns    = false
+    @tester            = false
     @pokedex           = false
     clearPokedex
     @shadowcaught      = []

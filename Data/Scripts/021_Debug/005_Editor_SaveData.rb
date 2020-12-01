@@ -433,7 +433,8 @@ end
 def pbSaveTrainerBattles
   data = pbLoadTrainersData
   return if !data
-  File.open("PBS/trainers.txt","wb") { |f|
+  if $Trainer.hardmode
+  File.open("PBS/trainersH.txt","wb") { |f|
     f.write(0xEF.chr)
     f.write(0xBB.chr)
     f.write(0xBF.chr)
@@ -532,6 +533,107 @@ def pbSaveTrainerBattles
       end
     end
   }
+  else
+  File.open("PBS/trainersE.txt","wb") { |f|
+    f.write(0xEF.chr)
+    f.write(0xBB.chr)
+    f.write(0xBF.chr)
+    f.write("\# "+_INTL("See the documentation on the wiki to learn how to edit this file."))
+    f.write("\r\n")
+    for trainer in data
+      trtypename = getConstantName(PBTrainers,trainer[0]) rescue pbGetTrainerConst(trainer[0]) rescue nil
+      next if !trtypename
+      f.write("\#-------------------------------\r\n")
+      # Section
+      trainername = trainer[1] ? trainer[1].gsub(/,/,";") : "???"
+      if trainer[4]==0
+        f.write(sprintf("[%s,%s]\r\n",trtypename,trainername))
+      else
+        f.write(sprintf("[%s,%s,%d]\r\n",trtypename,trainername,trainer[4]))
+      end
+      # Trainer's items
+      if trainer[2] && trainer[2].length>0
+        itemstring = ""
+        for i in 0...trainer[2].length
+          itemname = getConstantName(PBItems,trainer[2][i]) rescue pbGetItemConst(trainer[2][i]) rescue nil
+          next if !itemname
+          itemstring.concat(",") if i>0
+          itemstring.concat(itemname)
+        end
+        f.write(sprintf("Items = %s\r\n",itemstring)) if itemstring!=""
+      end
+      # Lose texts
+      if trainer[5] && trainer[5]!=""
+        f.write(sprintf("LoseText = %s\r\n",csvQuoteAlways(trainer[5])))
+      end
+      # Pokémon
+      for poke in trainer[3]
+        species = getConstantName(PBSpecies,poke[TPSPECIES]) rescue pbGetSpeciesConst(poke[TPSPECIES]) rescue ""
+        f.write(sprintf("Pokemon = %s,%d\r\n",species,poke[TPLEVEL]))
+        if poke[TPNAME] && poke[TPNAME]!=""
+          f.write(sprintf("    Name = %s\r\n",poke[TPNAME]))
+        end
+        if poke[TPFORM]
+          f.write(sprintf("    Form = %d\r\n",poke[TPFORM]))
+        end
+        if poke[TPGENDER]
+          f.write(sprintf("    Gender = %s\r\n",(poke[TPGENDER]==1) ? "female" : "male"))
+        end
+        if poke[TPSHINY]
+          f.write("    Shiny = yes\r\n")
+        end
+        if poke[TPSHADOW]
+          f.write("    Shadow = yes\r\n")
+        end
+        if poke[TPMOVES] && poke[TPMOVES].length>0
+          movestring = ""
+          for i in 0...poke[TPMOVES].length
+            movename = getConstantName(PBMoves,poke[TPMOVES][i]) rescue pbGetMoveConst(poke[TPMOVES][i]) rescue nil
+            next if !movename
+            movestring.concat(",") if i>0
+            movestring.concat(movename)
+          end
+          f.write(sprintf("    Moves = %s\r\n",movestring)) if movestring!=""
+        end
+        if poke[TPABILITY]
+          f.write(sprintf("    Ability = %d\r\n",poke[TPABILITY]))
+        end
+        if poke[TPITEM] && poke[TPITEM]>0
+          item = getConstantName(PBItems,poke[TPITEM]) rescue pbGetItemConst(poke[TPITEM]) rescue nil
+          f.write(sprintf("    Item = %s\r\n",item)) if item
+        end
+        if poke[TPNATURE]
+          nature = getConstantName(PBNatures,poke[TPNATURE]) rescue nil
+          f.write(sprintf("    Nature = %s\r\n",nature)) if nature
+        end
+        if poke[TPIV] && poke[TPIV].length>0
+          f.write(sprintf("    IV = %d",poke[TPIV][0]))
+          if poke[TPIV].length>1
+            for i in 1...6
+              f.write(sprintf(",%d",(i<poke[TPIV].length) ? poke[TPIV][i] : poke[TPIV][0]))
+            end
+          end
+          f.write("\r\n")
+        end
+        if poke[TPEV] && poke[TPEV].length>0
+          f.write(sprintf("    EV = %d",poke[TPEV][0]))
+          if poke[TPEV].length>1
+            for i in 1...6
+              f.write(sprintf(",%d",(i<poke[TPEV].length) ? poke[TPEV][i] : poke[TPEV][0]))
+            end
+          end
+          f.write("\r\n")
+        end
+        if poke[TPHAPPINESS]
+          f.write(sprintf("    Happiness = %d\r\n",poke[TPHAPPINESS]))
+        end
+        if poke[TPBALL]
+          f.write(sprintf("    Ball = %d\r\n",poke[TPBALL]))
+        end
+      end
+    end
+  }
+  end
 end
 
 

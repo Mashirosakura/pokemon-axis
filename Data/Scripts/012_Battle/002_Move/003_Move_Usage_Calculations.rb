@@ -223,8 +223,8 @@ class PokeBattle_Move
       target.damageState.calcDamage = 1
       return
     end
-    stageMul = [2,2,2,2,2,2, 2, 3,4,5,6,7,8]
-    stageDiv = [8,7,6,5,4,3, 2, 2,2,2,2,2,2]
+    stageMul = [2,2,2,2,2,2,2,3,4,5,6,7,8]
+    stageDiv = [8,7,6,5,4,3,2,2,2,2,2,2,2]
     # Get the move's type
     type = @calcType   # -1 is treated as physical
     # Calculate whether this hit deals critical damage
@@ -350,6 +350,18 @@ class PokeBattle_Move
       when PBBattleTerrains::Psychic
         if isConst?(type,PBTypes,:PSYCHIC)
           multipliers[BASE_DMG_MULT] *= 1.5
+        end
+      when PBBattleTerrains::Toxic
+        if isConst?(type,PBTypes,:POISON)
+          multipliers[BASE_DMG_MULT] *= 1.5
+        end
+        if user.pbCanPoison?(target,PokeBattle_SceneConstants::USE_ABILITY_SPLASH)
+          msg = nil
+          if !PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+            msg = _INTL("{1} poisoned {2}!",target.pbThis,
+               @battle.field.terrain,user.pbThis(true))
+          end
+          user.pbPoison(target,msg)
         end
       end
     end

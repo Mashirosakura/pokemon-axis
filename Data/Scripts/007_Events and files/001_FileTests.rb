@@ -274,6 +274,44 @@ module RTP
     return ret
   end
 
+  def self.getMountFileName(fileName)
+    return getMountFolder().gsub(/[\/\\]$/,"")+"/"+fileName
+  end
+
+  def self.getMountFolder
+    return "./Transfer"
+    if !@@folder
+      # XXX: Use "." instead of Dir.pwd because of problems retrieving files if
+      # the current directory contains an accent mark
+      pwd="."
+      # Get the known folder path for saved games
+      savedGames=getKnownFolder([
+         0x4c5c32ff,0xbb9d,0x43b0,0xb5,0xb4,0x2d,0x72,0xe5,0x4e,0xaa,0xa4])
+      if savedGames && savedGames!="" && isDirWritable(savedGames)
+        pwd=ensureGameDir(savedGames)
+      end
+      if isDirWritable(pwd)
+        @@folder=pwd
+      else
+        appdata=ENV["LOCALAPPDATA"]
+        if isDirWritable(appdata)
+          appdata=ensureGameDir(appdata)
+        else
+          appdata=ENV["APPDATA"]
+          if isDirWritable(appdata)
+            appdata=ensureGameDir(appdata)
+          elsif isDirWritable(pwd)
+            appdata=pwd
+          else
+            appdata="."
+          end
+        end
+        @@folder=appdata
+      end
+    end
+    return @@folder
+  end
+  
   def self.getSaveFileName(fileName)
     return getSaveFolder().gsub(/[\/\\]$/,"")+"/"+fileName
   end

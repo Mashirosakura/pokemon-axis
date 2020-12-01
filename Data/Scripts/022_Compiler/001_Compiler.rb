@@ -1155,7 +1155,8 @@ def pbCompileAllData(mustCompile)
     pbCompileTrainerTypes
     # Depends on PBSpecies, PBItems, PBMoves
     yield(_INTL("Compiling Trainer data"))
-    pbCompileTrainers
+    pbCompileHardTrainers
+    pbCompileEasyTrainers
     # Depends on PBTrainers
     yield(_INTL("Compiling phone data"))
     pbCompilePhoneData

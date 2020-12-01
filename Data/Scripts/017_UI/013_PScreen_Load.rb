@@ -172,8 +172,8 @@ class PokemonLoad_Scene
     for i in 0...trainer.party.length
       @sprites["party#{i}"] = PokemonIconSprite.new(trainer.party[i],@viewport)
       @sprites["party#{i}"].setOffset(PictureOrigin::Center)
-      @sprites["party#{i}"].x = (167+33*(i%2))*2
-      @sprites["party#{i}"].y = (56+25*(i/2))*2
+      @sprites["party#{i}"].x = (167+33*(i/2))*2
+      @sprites["party#{i}"].y = (56+25*(i%2))*2
       @sprites["party#{i}"].z = 99999
     end
   end

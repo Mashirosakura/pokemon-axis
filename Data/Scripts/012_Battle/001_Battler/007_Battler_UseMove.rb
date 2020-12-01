@@ -61,7 +61,7 @@ class PokeBattle_Battler
     }
     @battle.pbJudge
     # Update priority order
-#    @battle.pbCalculatePriority if NEWEST_BATTLE_MECHANICS
+    @battle.pbCalculatePriority if NEWEST_BATTLE_MECHANICS
     return true
   end
 

@@ -139,11 +139,12 @@ class PokemonPauseMenu
       commands[cmdSave = commands.length]   = _INTL("Save") if $game_system && !$game_system.save_disabled
     end
     commands[cmdOption = commands.length]   = _INTL("Options")
-    commands[cmdDebug = commands.length]    = _INTL("Debug") if $DEBUG
+    commands[cmdDebug = commands.length]    = _INTL("Debug") if $DEBUG || $Trainer.tester
     commands[cmdEndGame = commands.length]  = _INTL("Quit Game")
     loop do
       command = @scene.pbShowCommands(commands)
       if cmdPokedex>=0 && command==cmdPokedex
+#       pbMessage(_INTL("The Pokedex is unfortunately broken at the moment. you may still view pokedex entries through the summary menu."))
         if USE_CURRENT_REGION_DEX
           pbFadeOutIn {
             scene = PokemonPokedex_Scene.new

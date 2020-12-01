@@ -164,7 +164,11 @@ def pbNewTrainer(trainerid,trainername,trainerparty,savechanges=true)
   if savechanges
     data = pbLoadTrainersData
     data.push(trainer)
-    save_data(data,"Data/trainers.dat")
+    if $Trainer.hardmode
+    save_data(data,"Data/trainersH.dat")
+    else
+    save_data(data,"Data/trainersE.dat")
+    end
     $PokemonTemp.trainersData = nil
     pbConvertTrainerData
     pbMessage(_INTL("The Trainer's data was added to the list of battles and in PBS/trainers.txt."))

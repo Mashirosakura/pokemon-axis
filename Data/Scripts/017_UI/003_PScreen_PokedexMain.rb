@@ -246,7 +246,7 @@ class PokemonPokedex_Scene
 =end
     addBackgroundPlane(@sprites,"searchbg","Pokedex/bg_search",@viewport)
     @sprites["searchbg"].visible = false
-    @sprites["pokedex"] = Window_Pokedex.new(206,30,276,364,@viewport)
+    @sprites["pokedex"] = Window_Pokedex.new(206+RXMOD,30,276,364+RYMOD,@viewport)
     @sprites["icon"] = PokemonSprite.new(@viewport)
     @sprites["icon"].setOffset(PictureOrigin::Center)
     @sprites["icon"].x = 112
@@ -402,10 +402,10 @@ class PokemonPokedex_Scene
       textpos.push([_INTL("Search results"),112,308,2,base,shadow])
       textpos.push([@dexlist.length.to_s,112,340,2,base,shadow])
     else
-      textpos.push([_INTL("Seen:"),42,308,0,base,shadow])
-      textpos.push([$Trainer.pokedexSeen(pbGetPokedexRegion).to_s,182,308,1,base,shadow])
-      textpos.push([_INTL("Owned:"),42,340,0,base,shadow])
-      textpos.push([$Trainer.pokedexOwned(pbGetPokedexRegion).to_s,182,340,1,base,shadow])
+      textpos.push([_INTL("Seen:"),42,308+RYMOD,0,base,shadow])
+      textpos.push([$Trainer.pokedexSeen(pbGetPokedexRegion).to_s,182+RXMOD,308+RYMOD,1,base,shadow])
+      textpos.push([_INTL("Owned:"),42,340+RYMOD,0,base,shadow])
+      textpos.push([$Trainer.pokedexOwned(pbGetPokedexRegion).to_s,182+RXMOD,340+RYMOD,1,base,shadow])
     end
     # Draw all text
     pbDrawTextPositions(overlay,textpos)
@@ -415,29 +415,29 @@ class PokemonPokedex_Scene
     itemlist = @sprites["pokedex"]
     showslider = false
     if itemlist.top_row>0
-      overlay.blt(468,48,@sliderbitmap.bitmap,Rect.new(0,0,40,30))
+      overlay.blt(468+RXMOD,48,@sliderbitmap.bitmap,Rect.new(0,0,40,30))
       showslider = true
     end
     if itemlist.top_item+itemlist.page_item_max<itemlist.itemCount
-      overlay.blt(468,346,@sliderbitmap.bitmap,Rect.new(0,30,40,30))
+      overlay.blt(468+RXMOD,346+RYMOD,@sliderbitmap.bitmap,Rect.new(0,30,40,30))
       showslider = true
     end
     # Draw slider box
     if showslider
-      sliderheight = 268
+      sliderheight = 268+RYMOD
       boxheight = (sliderheight*itemlist.page_row_max/itemlist.row_max).floor
       boxheight += [(sliderheight-boxheight)/2,sliderheight/6].min
       boxheight = [boxheight.floor,40].max
       y = 78
       y += ((sliderheight-boxheight)*itemlist.top_row/(itemlist.row_max-itemlist.page_row_max)).floor
-      overlay.blt(468,y,@sliderbitmap.bitmap,Rect.new(40,0,40,8))
+      overlay.blt(468+RXMOD,y,@sliderbitmap.bitmap,Rect.new(40,0,40,8))
       i = 0
       while i*16<boxheight-8-16
         height = [boxheight-8-16-i*16,16].min
-        overlay.blt(468,y+8+i*16,@sliderbitmap.bitmap,Rect.new(40,8,40,height))
+        overlay.blt(468+RXMOD,y+8+i*16,@sliderbitmap.bitmap,Rect.new(40,8,40,height))
         i += 1
       end
-      overlay.blt(468,y+boxheight-16,@sliderbitmap.bitmap,Rect.new(40,24,40,16))
+      overlay.blt(468+RXMOD,y+boxheight-16,@sliderbitmap.bitmap,Rect.new(40,24,40,16))
     end
   end
 
@@ -1151,12 +1151,12 @@ class PokemonPokedex_Scene
           $PokemonGlobal.pokedexIndex[pbGetSavePositionIndex] = @sprites["pokedex"].index if !@searchResults
           pbRefresh
         end
-        if Input.trigger?(Input::A)
-          pbPlayDecisionSE
-          @sprites["pokedex"].active = false
-          pbDexSearch
-          @sprites["pokedex"].active = true
-        elsif Input.trigger?(Input::B)
+#       if Input.trigger?(Input::A)
+#         pbPlayDecisionSE
+#         @sprites["pokedex"].active = false
+#         pbDexSearch
+#         @sprites["pokedex"].active = true
+        if Input.trigger?(Input::B)
           if @searchResults
             pbPlayCancelSE
             pbCloseSearch

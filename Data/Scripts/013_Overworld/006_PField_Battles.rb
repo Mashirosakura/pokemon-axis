@@ -27,8 +27,10 @@ class PokemonTemp
   def recordBattleRule(rule,var=nil)
     rules = self.battleRules
     case rule.to_s.downcase
-    when "single", "1v1", "1v2", "2v1", "1v3", "3v1",
-         "double", "2v2", "2v3", "3v2", "triple", "3v3"
+    when "single", "1v1", "1v2", "1v3", "1v4",
+         "double", "2v1", "2v2", "2v3", "2v4",
+         "triple", "3v1", "3v2", "3v3", "3v4", 
+         "quad",   "4v1", "4v2", "4v3", "4v4" 
       rules["size"] = rule.to_s.downcase
     when "canlose";                rules["canLose"]        = true
     when "cannotlose";             rules["canLose"]        = false
@@ -208,6 +210,11 @@ def pbCanTripleBattle?
   return $PokemonGlobal.partner && $Trainer.ablePokemonCount>=2
 end
 
+def pbCanQuadBattle?
+  return true if $Trainer.ablePokemonCount>=4
+  return $PokemonGlobal.partner && $Trainer.ablePokemonCount>=3
+end
+
 #===============================================================================
 # Start a wild battle
 #===============================================================================
@@ -341,6 +348,19 @@ def pbTripleWildBattle(species1, level1, species2, level2, species3, level3,
   setBattleRule("triple")
   # Perform the battle
   decision = pbWildBattleCore(species1, level1, species2, level2, species3, level3)
+  # Return false if the player lost or drew the battle, and true if any other result
+  return (decision!=2 && decision!=5)
+end
+
+def pbQuadWildBattle(species1, level1, species2, level2, species3, level3, species4, level4,
+                       outcomeVar=1, canRun=true, canLose=false)
+  # Set some battle rules
+  setBattleRule("outcomeVar",outcomeVar) if outcomeVar!=1
+  setBattleRule("cannotRun") if !canRun
+  setBattleRule("canLose") if canLose
+  setBattleRule("triple")
+  # Perform the battle
+  decision = pbWildBattleCore(species1, level1, species2, level2, species3, level3, species4, level4)
   # Return false if the player lost or drew the battle, and true if any other result
   return (decision!=2 && decision!=5)
 end
@@ -537,6 +557,26 @@ def pbTripleTrainerBattle(trainerID1, trainerName1, trainerPartyID1, endSpeech1,
      [trainerID1,trainerName1,trainerPartyID1,endSpeech1],
      [trainerID2,trainerName2,trainerPartyID2,endSpeech2],
      [trainerID3,trainerName3,trainerPartyID3,endSpeech3]
+  )
+  # Return true if the player won the battle, and false if any other result
+  return (decision==1)
+end
+
+def pbQuadTrainerBattle(trainerID1, trainerName1, trainerPartyID1, endSpeech1,
+                        trainerID2, trainerName2, trainerPartyID2, endSpeech2,
+                        trainerID3, trainerName3, trainerPartyID3, endSpeech3,
+                        trainerID4, trainerName4, trainerPartyID4=0, endSpeech4=nil,
+                        canLose=false, outcomeVar=1)
+  # Set some battle rules
+  setBattleRule("outcomeVar",outcomeVar) if outcomeVar!=1
+  setBattleRule("canLose") if canLose
+  setBattleRule("quad")
+  # Perform the battle
+  decision = pbTrainerBattleCore(
+     [trainerID1,trainerName1,trainerPartyID1,endSpeech1],
+     [trainerID2,trainerName2,trainerPartyID2,endSpeech2],
+     [trainerID3,trainerName3,trainerPartyID3,endSpeech3],
+     [trainerID4,trainerName4,trainerPartyID4,endSpeech4]
   )
   # Return true if the player won the battle, and false if any other result
   return (decision==1)
