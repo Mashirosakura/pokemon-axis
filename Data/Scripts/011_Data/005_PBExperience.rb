@@ -167,7 +167,9 @@ module PBExperience
   # expgain -- Exp. Points to add
   # growth -- Growth rate.
   def self.pbAddExperience(currexp,expgain,growth)
-    if growth<0 || growth>PBGrowthRates.maxValue
+    levelLimits = [15, 25, 30, 35, 40, 50, 50, 55, 70, 70, 70, 75, 80, 85, 85]
+    leadersDefeated = levelLimits[$Trainer.numbadges] 
+    if growth>=6 || growth<0
       return ArgumentError.new("The growth rate is invalid.")
     end
     exp = currexp+expgain
