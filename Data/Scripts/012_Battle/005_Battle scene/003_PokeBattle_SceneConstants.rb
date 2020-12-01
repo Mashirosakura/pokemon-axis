@@ -1,19 +1,19 @@
 module PokeBattle_SceneConstants
   USE_ABILITY_SPLASH = true
   # Text colors
-  MESSAGE_BASE_COLOR   = Color.new(80,80,88)
-  MESSAGE_SHADOW_COLOR = Color.new(160,160,168)
+  MESSAGE_BASE_COLOR   = Color.new(64,64,64)
+  MESSAGE_SHADOW_COLOR = Color.new(128,128,128)
 
   # The number of party balls to show in each side's lineup.
-  NUM_BALLS = 6
+  NUM_BALLS = 32
 
   # Centre bottom of the player's side base graphic
-  PLAYER_BASE_X = 128
+  PLAYER_BASE_X = 212
   PLAYER_BASE_Y = Graphics.height - 80
 
   # Centre middle of the foe's side base graphic
-  FOE_BASE_X    = Graphics.width - 128
-  FOE_BASE_Y    = (Graphics.height * 3/4) - 112
+  FOE_BASE_X    = Graphics.width - 212
+  FOE_BASE_Y    = (Graphics.height * 3/4) - 162
 
   # Returns where the centre bottom of a battler's sprite should be, given its
   # index and the number of battlers on its side, assuming the battler has
@@ -31,6 +31,9 @@ module PokeBattle_SceneConstants
     when 3
       ret[0] += [-80, 80,  0,  0, 80, -80][index]
       ret[1] += [  0,  0,  8, -8, 16, -16][index]
+    when 4
+      ret[0] += [-140,140,-40,40,40,-40,140,-140][index]
+      ret[1] += [  0,  0,  8, -8, 16,-16, 24,-24][index]
     end
     return ret
   end
@@ -50,6 +53,9 @@ module PokeBattle_SceneConstants
     when 3
       ret[0] += [-80, 80,  0,  0, 80, -80][2*index+side]
       ret[1] += [  0,  0,  0, -8,  0, -16][2*index+side]
+    when 4
+      ret[0] += [-160,160,-60,60,40,-40,140,-140][2*index+side]
+      ret[1] += [  0,  0,  8, -8, 16, -16, 24,-24][2*index+side]
     end
     return ret
   end

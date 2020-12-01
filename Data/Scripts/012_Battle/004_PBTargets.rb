@@ -1,23 +1,23 @@
 module PBTargets
   # NOTE: These numbers are all over the place because of backwards
   #       compatibility. As untidy as they are, they need to be left like this.
-  None           = 1     # Bide, Counter, Metal Burst, Mirror Coat (calculate a target)
-  User           = 10
-  NearAlly       = 100   # Aromatic Mist, Helping Hand, Hold Hands
-  UserOrNearAlly = 200   # Acupressure
-  UserAndAllies  = 5     # Aromatherapy, Gear Up, Heal Bell, Life Dew, Magnetic Flux, Howl (in Gen 8+)
-  NearFoe        = 400   # Me First
-  RandomNearFoe  = 2     # Petal Dance, Outrage, Struggle, Thrash, Uproar
-  AllNearFoes    = 4
-  Foe            = 9     # For throwing a Poké Ball
-  AllFoes        = 6     # Unused (for completeness)
   NearOther      = 0
-  AllNearOthers  = 8
+  None           = 1     # Bide, Counter, Metal Burst, Mirror Coat (calculate a target)
+  RandomNearFoe  = 2     # Petal Dance, Outrage, Struggle, Thrash, Uproar
   Other          = 3     # Most Flying-type moves, pulse moves (hits non-near targets)
+  AllNearFoes    = 4
+  UserAndAllies  = 5     # Aromatherapy, Gear Up, Heal Bell, Life Dew, Magnetic Flux, Howl (in Gen 8+)
+  AllFoes        = 6     # Unused (for completeness)
   AllBattlers    = 7     # Flower Shield, Perish Song, Rototiller, Teatime
+  AllNearOthers  = 8
+  Foe            = 9     # For throwing a Poké Ball
+  User           = 10
+  BothSides      = 20
   UserSide       = 40
   FoeSide        = 80    # Entry hazards
-  BothSides      = 20
+  NearAlly       = 100   # Aromatic Mist, Helping Hand, Hold Hands
+  UserOrNearAlly = 200   # Acupressure
+  NearFoe        = 400   # Me First
 
   def self.noTargets?(target)
     return target==None ||

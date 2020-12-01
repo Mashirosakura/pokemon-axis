@@ -1134,7 +1134,7 @@ class PokemonPartyScreen
       cmdItem    = -1
       # Build the commands
       commands[cmdSummary = commands.length]      = _INTL("Summary")
-      commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG
+      commands[cmdDebug = commands.length]        = _INTL("Debug") if $DEBUG || $Trainer.tester
       for i in 0...pkmn.moves.length
         move = pkmn.moves[i]
         # Check for hidden moves and add any that were found

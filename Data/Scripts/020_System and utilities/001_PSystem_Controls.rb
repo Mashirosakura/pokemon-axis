@@ -39,6 +39,7 @@ module Input
   F7        = 31
   F8        = 32
   F9        = 33
+  G         = 34
   LeftMouseKey  = 1
   RightMouseKey = 2
   # GetAsyncKeyState or GetKeyState will work here
@@ -109,6 +110,7 @@ module Input
 #    when Input::X;         return [0x41]                # A
 #    when Input::Y;         return [0x53]                # S
 #    when Input::Z;         return [0x44]                # D
+    when Input::G;         return [0x47]                # G
     when Input::L;         return [0x41,0x51,0x21]      # A, Q, Page Up
     when Input::R;         return [0x53,0x22]           # S, Page Down
     when Input::ENTER;     return [0x0D]                # ENTER
@@ -126,6 +128,7 @@ module Input
     when Input::F7;        return [0x76]                # F7
     when Input::F8;        return [0x77]                # F8
     when Input::F9;        return [0x78]                # F9
+#   when Input::N1;        return [0x
     else; return []
     end
   end

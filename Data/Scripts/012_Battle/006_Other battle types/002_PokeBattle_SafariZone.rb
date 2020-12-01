@@ -475,7 +475,7 @@ class PokeBattle_SafariZone
             @decision = 2
           elsif pbRandom(100)<5*escapeFactor
             pbSEPlay("Battle flee")
-            pbDisplay(_INTL("{1} fled!",wildpoke.name))
+          pbDisplayPaused(_INTL("You got away safely!"))
             @decision = 3
           elsif cmd==1   # Bait
             pbDisplay(_INTL("{1} is eating!",wildpoke.name))

@@ -1,17 +1,21 @@
 module EncounterTypes
-  Land         = 0
-  Cave         = 1
-  Water        = 2
-  RockSmash    = 3
-  OldRod       = 4
-  GoodRod      = 5
-  SuperRod     = 6
-  HeadbuttLow  = 7
-  HeadbuttHigh = 8
-  LandMorning  = 9
-  LandDay      = 10
-  LandNight    = 11
-  BugContest   = 12
+  Land            = 0
+  Cave            = 1
+  Water           = 2
+  RockSmash       = 3
+  OldRod          = 4
+  GoodRod         = 5
+  SuperRod        = 6
+  HeadbuttLow     = 7
+  HeadbuttHigh    = 8
+  LandMorning     = 9
+  LandDay         = 10
+  LandNight       = 11
+  BugContest      = 12
+  PhenomenonGrass = 13
+  PhenomenonWater = 14
+  PhenomenonCave  = 15
+  PhenomenonBird  = 16
   Names = [
      "Land",
      "Cave",
@@ -25,25 +29,33 @@ module EncounterTypes
      "LandMorning",
      "LandDay",
      "LandNight",
-     "BugContest"
+     "BugContest",
+     "PhenomenonGrass",
+     "PhenomenonWater",
+     "PhenomenonCave",
+     "PhenomenonBird"
   ]
   EnctypeChances = [
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [60,30,5,4,1],
-     [60,30,5,4,1],
-     [70,30],
-     [60,20,20],
-     [40,40,15,4,1],
+     [20,20,20,20,8,8,4],
+     [20,20,20,20,8,8,4],
+     [20,20,20,20,16,4],
+     [60,15,15,5,4,1],
+     [50,30,20],
+     [50,30,20],
+     [40,40,12,4,4],
      [30,25,20,10,5,5,4,1],
      [30,25,20,10,5,5,4,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1]
+     [20,20,20,20,8,8,4],
+     [20,20,20,20,8,8,4],
+     [20,20,20,20,8,8,4],
+     [20,20,20,20,8,8,4],
+     [50, 20, 10, 5, 5, 5, 5],
+     [50, 20, 10, 5, 5, 5, 5],
+     [50, 30, 10, 5, 5],
+     [50, 30, 10, 5, 5]
   ]
-  EnctypeDensities   = [25, 10, 10, 0, 0, 0, 0, 0, 0, 25, 25, 25, 25]
-  EnctypeCompileDens = [ 1,  2,  3, 0, 0, 0, 0, 0, 0,  1,  1,  1,  1]
+  EnctypeDensities   = [25,10,10,0,0,0,0,0,0,25,25,25,25,100,100,100,100]
+  EnctypeCompileDens = [1,2,3,0,0,0,0,0,0,1,1,1,1,1,1,1,1]
 end
 
 
@@ -247,6 +259,20 @@ class PokemonEncounters
         favoredType = getConst(PBTypes,:ELECTRIC)
       elsif isConst?(firstPkmn.ability,PBAbilities,:MAGNETPULL) && hasConst?(PBTypes,:STEEL)
         favoredType = getConst(PBTypes,:STEEL)
+      elsif isConst?(firstpoke.ability,PBAbilities,:FLASHFIRE) && hasConst?(PBTypes,:FIRE)
+        favoredType = getConst(PBTypes,:FIRE) # changed added
+      elsif isConst?(firstpoke.ability,PBAbilities,:HARVEST) && hasConst?(PBTypes,:GRASS)
+        favoredType = getConst(PBTypes,:GRASS) # changed added
+      elsif isConst?(firstpoke.ability,PBAbilities,:LIGHTNINGROD) && hasConst?(PBTypes,:ELECTRIC)
+        favoredType = getConst(PBTypes,:ELECTRIC) # changed added
+      elsif isConst?(firstpoke.ability,PBAbilities,:STORMDRAIN) && hasConst?(PBTypes,:WATER)
+        favoredType = getConst(PBTypes,:WATER) # changed added
+      elsif isConst?(firstpoke.ability,PBAbilities,:SHIELDDUST) && hasConst?(PBTypes,:BUG)
+        favoredType = getConst(PBTypes,:BUG) # changed added
+      elsif isConst?(firstpoke.ability,PBAbilities,:CURSEDBODY) && hasConst?(PBTypes,:GHOST)
+        favoredType = getConst(PBTypes,:GHOST) # changed added
+      elsif isConst?(firstpoke.ability,PBAbilities,:BIGPECKS) && hasConst?(PBTypes,:FLYING)
+        favoredType = getConst(PBTypes,:FLYING) # changed added
       end
       if favoredType>=0
         newEncList = []
@@ -348,6 +374,8 @@ class PokemonEncounters
         elsif isConst?(firstPkmn.ability,PBAbilities,:WHITESMOKE)
           encount = encount/2
         elsif isConst?(firstPkmn.ability,PBAbilities,:QUICKFEET)
+          encount = encount/2
+        elsif isConst?(firstpoke.ability,PBAbilities,:INFILTRATOR) # changed added
           encount = encount/2
         elsif isConst?(firstPkmn.ability,PBAbilities,:SNOWCLOAK)
           encount = encount/2 if $game_screen.weather_type==PBFieldWeather::Snow ||

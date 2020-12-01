@@ -23,6 +23,8 @@ class PokemonGlobalMetadata
   attr_accessor :phoneNumbers
   attr_accessor :phoneTime
   attr_accessor :partner
+  attr_accessor :partnerA
+  attr_accessor :partnerB
   attr_accessor :snagMachine
   attr_accessor :creditsPlayed
   # Pokédex
@@ -83,6 +85,8 @@ class PokemonGlobalMetadata
     @phoneNumbers         = []
     @phoneTime            = 0
     @partner              = nil
+    @partnerA             = nil
+    @partnerB             = nil
     @snagMachine          = false
     @creditsPlayed        = false
     # Pokédex

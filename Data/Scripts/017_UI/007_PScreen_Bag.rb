@@ -130,7 +130,7 @@ class PokemonBag_Scene
   ITEMTEXTSHADOWCOLOR   = Color.new(0,0,0)
   POCKETNAMEBASECOLOR   = Color.new(88,88,80)
   POCKETNAMESHADOWCOLOR = Color.new(168,184,184)
-  ITEMSVISIBLE          = 7
+  ITEMSVISIBLE          = 10
 
   def pbUpdate
     pbUpdateSpriteHash(@sprites)
@@ -172,6 +172,13 @@ class PokemonBag_Scene
     @sliderbitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/Bag/icon_slider"))
     @pocketbitmap = AnimatedBitmap.new(_INTL("Graphics/Pictures/Bag/icon_pocket"))
     @sprites = {}
+    @arrowanim=0
+    if $Trainer.isFemale?
+    addBackgroundPlane(@sprites,"grid","Bag/bg_gridf",@viewport)
+    else
+    addBackgroundPlane(@sprites,"grid","Bag/bg_grid",@viewport)
+    end
+    @sprites["bagsprite"] = IconSprite.new(-20,10,@viewport)
     @sprites["background"] = IconSprite.new(0,0,@viewport)
     @sprites["overlay"] = BitmapSprite.new(Graphics.width,Graphics.height,@viewport)
     pbSetSystemFont(@sprites["overlay"].bitmap)
@@ -189,7 +196,7 @@ class PokemonBag_Scene
     @sprites["rightarrow"].y       = 76
     @sprites["rightarrow"].visible = (!@choosing || numfilledpockets>1)
     @sprites["rightarrow"].play
-    @sprites["itemlist"] = Window_PokemonBag.new(@bag,@filterlist,lastpocket,168,-8,314,40+32+ITEMSVISIBLE*32)
+    @sprites["itemlist"] = Window_PokemonBag.new(@bag,@filterlist,lastpocket,168+RXMOD,-8,314,40+32+ITEMSVISIBLE*32)
     @sprites["itemlist"].viewport    = @viewport
     @sprites["itemlist"].pocket      = lastpocket
     @sprites["itemlist"].index       = @bag.getChoice(lastpocket)
@@ -198,7 +205,7 @@ class PokemonBag_Scene
     @sprites["itemicon"] = ItemIconSprite.new(48,Graphics.height-48,-1,@viewport)
     @sprites["itemtext"] = Window_UnformattedTextPokemon.new("")
     @sprites["itemtext"].x           = 72
-    @sprites["itemtext"].y           = 270
+    @sprites["itemtext"].y           = 270+RYMOD
     @sprites["itemtext"].width       = Graphics.width-72-24
     @sprites["itemtext"].height      = 128
     @sprites["itemtext"].baseColor   = ITEMTEXTBASECOLOR
@@ -254,10 +261,14 @@ class PokemonBag_Scene
 
   def pbRefresh
     # Set the background image
-    @sprites["background"].setBitmap(sprintf("Graphics/Pictures/Bag/bg_#{@bag.lastpocket}"))
+    if $Trainer.isFemale?
+      @sprites["background"].setBitmap(sprintf("Graphics/Pictures/Bag/bg_f"))
+    else
+      @sprites["background"].setBitmap(sprintf("Graphics/Pictures/Bag/bg"))
+    end
     # Set the bag sprite
     fbagexists = pbResolveBitmap(sprintf("Graphics/Pictures/Bag/bag_#{@bag.lastpocket}_f"))
-    if $Trainer.female? && fbagexists
+    if $Trainer.isFemale? && fbagexists
       @sprites["bagsprite"].setBitmap("Graphics/Pictures/Bag/bag_#{@bag.lastpocket}_f")
     else
       @sprites["bagsprite"].setBitmap("Graphics/Pictures/Bag/bag_#{@bag.lastpocket}")
@@ -291,11 +302,11 @@ class PokemonBag_Scene
     # Draw slider arrows
     showslider = false
     if itemlist.top_row>0
-      overlay.blt(470,16,@sliderbitmap.bitmap,Rect.new(0,0,36,38))
+      overlay.blt(470+RXMOD,16,@sliderbitmap.bitmap,Rect.new(0,0,36,38))
       showslider = true
     end
     if itemlist.top_item+itemlist.page_item_max<itemlist.itemCount
-      overlay.blt(470,228,@sliderbitmap.bitmap,Rect.new(0,38,36,38))
+      overlay.blt(470+RXMOD,228+RYMOD,@sliderbitmap.bitmap,Rect.new(0,38,36,38))
       showslider = true
     end
     # Draw slider box
@@ -306,14 +317,14 @@ class PokemonBag_Scene
       boxheight = [boxheight.floor,38].max
       y = 54
       y += ((sliderheight-boxheight)*itemlist.top_row/(itemlist.row_max-itemlist.page_row_max)).floor
-      overlay.blt(470,y,@sliderbitmap.bitmap,Rect.new(36,0,36,4))
+      overlay.blt(470+RXMOD,y,@sliderbitmap.bitmap,Rect.new(36,0,36,4))
       i = 0
       while i*16<boxheight-4-18
         height = [boxheight-4-18-i*16,16].min
-        overlay.blt(470,y+4+i*16,@sliderbitmap.bitmap,Rect.new(36,4,36,height))
+        overlay.blt(470+RXMOD,y+4+i*16,@sliderbitmap.bitmap,Rect.new(36,4,36,height))
         i += 1
       end
-      overlay.blt(470,y+boxheight-18,@sliderbitmap.bitmap,Rect.new(36,20,36,18))
+      overlay.blt(470+RXMOD,y+boxheight-18,@sliderbitmap.bitmap,Rect.new(36,20,36,18))
     end
     # Set the selected item's icon
     @sprites["itemicon"].item = itemlist.item

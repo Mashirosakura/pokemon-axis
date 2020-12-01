@@ -41,7 +41,7 @@ class PokeBattle_Battle
     end
     # Fleeing from trainer battles
     if trainerBattle?
-      if $DEBUG && Input.press?(Input::CTRL)
+      if ($DEBUG || $Trainer.tester) && Input.press?(Input::CTRL)
         if pbDisplayConfirm(_INTL("Treat this battle as a win?"))
           @decision = 1
           return 1
@@ -60,7 +60,7 @@ class PokeBattle_Battle
       return 0
     end
     # Fleeing from wild battles
-    if $DEBUG && Input.press?(Input::CTRL)
+    if ($DEBUG || $Trainer.tester) && Input.press?(Input::CTRL)
       pbSEPlay("Battle flee")
       pbDisplayPaused(_INTL("You got away safely!"))
       @decision = 3
@@ -83,7 +83,7 @@ class PokeBattle_Battle
           pbShowAbilitySplash(battler,true)
           pbHideAbilitySplash(battler)
           pbSEPlay("Battle flee")
-          pbDisplayPaused(_INTL("You got away safely!"))
+        pbDisplayPaused(_INTL("You got away safely!"))
           @decision = 3
           return 1
         end

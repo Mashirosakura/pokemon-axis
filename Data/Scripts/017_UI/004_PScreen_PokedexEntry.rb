@@ -236,9 +236,9 @@ class PokemonPokedexInfo_Scene
     end
     textpos = [
        [_INTL("{1}{2} {3}",indexText," ",PBSpecies.getName(@species)),
-          246,42,0,Color.new(248,248,248),Color.new(0,0,0)],
-       [_INTL("Height"),314,158,0,base,shadow],
-       [_INTL("Weight"),314,190,0,base,shadow]
+          246+RXMOD,42,0,Color.new(248,248,248),Color.new(0,0,0)],
+       [_INTL("Height"),314+RXMOD,158,0,base,shadow],
+       [_INTL("Weight"),314+RXMOD,190,0,base,shadow]
     ]
     if $Trainer.owned[@species]
       speciesData = pbGetSpeciesData(@species,@form)
@@ -246,23 +246,23 @@ class PokemonPokedexInfo_Scene
       # Write the kind
       kind = pbGetMessage(MessageTypes::Kinds,fSpecies)
       kind = pbGetMessage(MessageTypes::Kinds,@species) if !kind || kind==""
-      textpos.push([_INTL("{1} Pokémon",kind),246,74,0,base,shadow])
+      textpos.push([_INTL("{1} Pokémon",kind),246+RXMOD,74,0,base,shadow])
       # Write the height and weight
       height = speciesData[SpeciesHeight] || 1
       weight = speciesData[SpeciesWeight] || 1
       if pbGetCountry==0xF4   # If the user is in the United States
         inches = (height/0.254).round
         pounds = (weight/0.45359).round
-        textpos.push([_ISPRINTF("{1:d}'{2:02d}\"",inches/12,inches%12),460,158,1,base,shadow])
-        textpos.push([_ISPRINTF("{1:4.1f} lbs.",pounds/10.0),494,190,1,base,shadow])
+        textpos.push([_ISPRINTF("{1:d}'{2:02d}\"",inches/12,inches%12),460+RXMOD,158,1,base,shadow])
+        textpos.push([_ISPRINTF("{1:4.1f} lbs.",pounds/10.0),494+RXMOD,190,1,base,shadow])
       else
-        textpos.push([_ISPRINTF("{1:.1f} m",height/10.0),470,158,1,base,shadow])
-        textpos.push([_ISPRINTF("{1:.1f} kg",weight/10.0),482,190,1,base,shadow])
+        textpos.push([_ISPRINTF("{1:.1f} m",height/10.0),470+RXMOD,158,1,base,shadow])
+        textpos.push([_ISPRINTF("{1:.1f} kg",weight/10.0),482+RXMOD,190,1,base,shadow])
       end
       # Draw the Pokédex entry text
       entry = pbGetMessage(MessageTypes::Entries,fSpecies)
       entry = pbGetMessage(MessageTypes::Entries,@species) if !entry || entry==""
-      drawTextEx(overlay,40,240,Graphics.width-(40*2),4,entry,base,shadow)
+      drawTextEx(overlay,40,240+RYMOD,Graphics.width-(40*2),4,entry,base,shadow)
       # Draw the footprint
       footprintfile = pbPokemonFootprintFile(@species,@form)
       if footprintfile
@@ -271,24 +271,24 @@ class PokemonPokedexInfo_Scene
         footprint.dispose
       end
       # Show the owned icon
-      imagepos.push(["Graphics/Pictures/Pokedex/icon_own",212,44])
+      imagepos.push(["Graphics/Pictures/Pokedex/icon_own",212+RXMOD,44])
       # Draw the type icon(s)
       type1 = speciesData[SpeciesType1] || 0
       type2 = speciesData[SpeciesType2] || type1
       type1rect = Rect.new(0,type1*32,96,32)
       type2rect = Rect.new(0,type2*32,96,32)
-      overlay.blt(296,120,@typebitmap.bitmap,type1rect)
-      overlay.blt(396,120,@typebitmap.bitmap,type2rect) if type1!=type2
+      overlay.blt(296+RXMOD,120,@typebitmap.bitmap,type1rect)
+      overlay.blt(396+RXMOD,120,@typebitmap.bitmap,type2rect) if type1!=type2
     else
       # Write the kind
-      textpos.push([_INTL("????? Pokémon"),246,74,0,base,shadow])
+      textpos.push([_INTL("????? Pokémon"),246+RXMOD,74,0,base,shadow])
       # Write the height and weight
       if pbGetCountry()==0xF4 # If the user is in the United States
-        textpos.push([_INTL("???'??\""),460,158,1,base,shadow])
-        textpos.push([_INTL("????.? lbs."),494,190,1,base,shadow])
+        textpos.push([_INTL("???'??\""),460+RXMOD,158,1,base,shadow])
+        textpos.push([_INTL("????.? lbs."),494+RXMOD,190,1,base,shadow])
       else
-        textpos.push([_INTL("????.? m"),470,158,1,base,shadow])
-        textpos.push([_INTL("????.? kg"),482,190,1,base,shadow])
+        textpos.push([_INTL("????.? m"),470+RXMOD,158,1,base,shadow])
+        textpos.push([_INTL("????.? kg"),482+RXMOD,190,1,base,shadow])
       end
     end
     # Draw all text
@@ -367,13 +367,13 @@ class PokemonPokedexInfo_Scene
     textpos = []
     if points.length==0
       pbDrawImagePositions(overlay,[
-         [sprintf("Graphics/Pictures/Pokedex/overlay_areanone"),108,188]
+         [sprintf("Graphics/Pictures/Pokedex/overlay_areanone"),187,236]
       ])
       textpos.push([_INTL("Area unknown"),Graphics.width/2,Graphics.height/2,2,base,shadow])
     end
-    textpos.push([pbGetMessage(MessageTypes::RegionNames,@region),414,44,2,base,shadow])
+    textpos.push([pbGetMessage(MessageTypes::RegionNames,@region),494,92,2,base,shadow])
     textpos.push([_INTL("{1}'s area",PBSpecies.getName(@species)),
-       Graphics.width/2,352,2,base,shadow])
+       Graphics.width/2,401,2,base,shadow])
     pbDrawTextPositions(overlay,textpos)
   end
 

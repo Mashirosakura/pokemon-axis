@@ -795,7 +795,6 @@ def pbImportAllAnimations
     pbMessage(_INTL("All animations were imported."))
   end
 end
-
 #===============================================================================
 # Properly erases all non-existent tiles in maps (including event graphics)
 #===============================================================================

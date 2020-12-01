@@ -1,42 +1,6 @@
-# Results of battle:
-#    0 - Undecided or aborted
-#    1 - Player won
-#    2 - Player lost
-#    3 - Player or wild Pokémon ran from battle, or player forfeited the match
-#    4 - Wild Pokémon was caught
-#    5 - Draw
-# Possible actions a battler can take in a round:
-#    :None
-#    :UseMove
-#    :SwitchOut
-#    :UseItem
-#    :Call
-#    :Run
-#    :Shift
-# NOTE: If you want to have more than 3 Pokémon on a side at once, you will need
-#       to edit some code. Mainly this is to change/add coordinates for the
-#       sprites, describe the relationships between Pokémon and trainers, and to
-#       change messages. The methods that will need editing are as follows:
-#           class PokeBattle_Battle
-#             def setBattleMode
-#             def pbGetOwnerIndexFromBattlerIndex
-#             def pbGetOpposingIndicesInOrder
-#             def nearBattlers?
-#             def pbStartBattleSendOut
-#             def pbEORShiftDistantBattlers
-#             def pbCanShift?
-#             def pbEndOfRoundPhase
-#           class TargetMenuDisplay
-#             def initialize
-#           class PokemonDataBox
-#             def initializeDataBoxGraphic
-#           module PokeBattle_SceneConstants
-#             def self.pbBattlerPosition
-#             def self.pbTrainerPosition
-#           class PokemonTemp
-#             def recordBattleRule
-#       (There is no guarantee that this list is complete.)
-
+################################################################################
+# Main battle class.
+################################################################################
 class PokeBattle_Battle
   attr_reader   :scene            # Scene object for this battle
   attr_reader   :peer
@@ -70,6 +34,7 @@ class PokeBattle_Battle
   attr_accessor :rules
   attr_accessor :choices          # Choices made by each Pokémon this round
   attr_accessor :megaEvolution    # Battle index of each trainer's Pokémon to Mega Evolve
+  attr_accessor :zMove            # Battle index of each trainer's Pokémon to Use a zMove
   attr_reader   :initialItems
   attr_reader   :recycleItems
   attr_reader   :belch
@@ -143,6 +108,10 @@ class PokeBattle_Battle
        [-1] * (@player ? @player.length : 1),
        [-1] * (@opponent ? @opponent.length : 1)
     ]
+    @zMove             = [
+       [-1] * (@player ? @player.length : 1),
+       [-1] * (@opponent ? @opponent.length : 1)
+    ]
     @initialItems      = [
        Array.new(@party1.length) { |i| (@party1[i]) ? @party1[i].item : 0 },
        Array.new(@party2.length) { |i| (@party2[i]) ? @party2[i].item : 0 }
@@ -179,12 +148,22 @@ class PokeBattle_Battle
   def setBattleMode(mode)
     @sideSizes =
       case mode
+      when "quad",   "4v4"; [4,4]
+      when "4v3";           [4,3]
+      when "4v2";           [4,2]
+      when "4v1";           [4,1]
+
+      when "3v4";           [3,4]
       when "triple", "3v3"; [3,3]
       when "3v2";           [3,2]
       when "3v1";           [3,1]
+
+      when "2v4";           [2,4]
       when "2v3";           [2,3]
       when "double", "2v2"; [2,2]
       when "2v1";           [2,1]
+
+      when "1v4";           [1,4]
       when "1v3";           [1,3]
       when "1v2";           [1,2]
       else;                 [1,1]   # Single, 1v1 (default)
@@ -219,6 +198,7 @@ class PokeBattle_Battle
     when 2
       n = pbSideSize(idxBattler%2)
       return [0,0,1][idxBattler/2] if n==3
+      return [0,0,0,1][idxBattler/2] if n==4
       return idxBattler/2   # Same as [0,1][idxBattler/2], i.e. 2 battler slots
     when 3; return idxBattler/2
     end
@@ -481,6 +461,9 @@ class PokeBattle_Battle
       when 3   # 1v3
         return [0] if opposes?(idxBattler)
         return [3,5,1]
+      when 4   # 1v4
+        return [0] if opposes?(idxBattler)
+        return [3,5,1,7]
       end
     when 2
       case pbSideSize(1)
@@ -492,6 +475,9 @@ class PokeBattle_Battle
       when 3   # 2v3
         return [[5,3,1],[2,0],[3,1,5]][idxBattler] if idxBattler<3
         return [0,2]
+      when 4   # 2v4
+        return [1,3,5,7] if opposes?(idxBattler)
+        return [0,2]
       end
     when 3
       case pbSideSize(1)
@@ -502,6 +488,24 @@ class PokeBattle_Battle
         return [[3,1],[2,4,0],[3,1],[2,0,4],[1,3]][idxBattler]
       when 3   # 3v3 triple
         return [[5,3,1],[4,2,0],[3,5,1],[2,0,4],[1,3,5],[0,2,4]][idxBattler]
+      when 4   # 3v4
+        return [1,3,5,7] if opposes?(idxBattler)
+        return  [0,2,4]
+      end
+    when 4
+      case pbSideSize(1)
+      when 1   # 4v1
+        return [0,2,4,6] if opposes?(idxBattler)
+        return [1]
+      when 2   # 4v2
+        return [0,2,4,6] if opposes?(idxBattler)
+        return [1,3]
+      when 3   # 4v3
+        return [0,2,4,6] if opposes?(idxBattler)
+        return  [1,3,5]
+      when 4   # 4v4 quad
+        return [0,2,4,6] if opposes?(idxBattler)
+        return [1,3,5,7]
       end
     end
     return [idxBattler]
@@ -520,20 +524,93 @@ class PokeBattle_Battle
     return false if idxBattler1==idxBattler2
     return true if pbSideSize(0)<=2 && pbSideSize(1)<=2
     # Get all pairs of battler positions that are not close to each other
-    pairsArray = [[0,4],[1,5]]   # Covers 3v1 and 1v3
+    pairsArray = []   # Covers 3v1 and 1v3
     case pbSideSize(0)
+    when 4
+      case pbSideSize(1)
+      when 4 #4v4
+        pairsArray.push([0,1])
+        pairsArray.push([0,3])
+        pairsArray.push([2,1])
+        pairsArray.push([4,7])
+        pairsArray.push([6,5])
+        pairsArray.push([6,7])
+      # Same Sides
+        pairsArray.push([0,4])
+        pairsArray.push([0,6])
+        pairsArray.push([6,2])
+        pairsArray.push([7,5])
+        pairsArray.push([7,3])
+        pairsArray.push([1,3])
+      when 3 #4v3
+        pairsArray.push([0,3])
+        pairsArray.push([0,1])
+        pairsArray.push([2,1])
+        pairsArray.push([4,5])
+        pairsArray.push([6,5])
+        pairsArray.push([6,3])
+      # Same Sides
+        pairsArray.push([0,4])
+        pairsArray.push([0,6])
+        pairsArray.push([6,2])
+        pairsArray.push([1,5])
+      when 2 #4v2
+        pairsArray.push([0,1])
+        pairsArray.push([6,3])
+      # Same Sides
+        pairsArray.push([0,4])
+        pairsArray.push([0,6])
+        pairsArray.push([2,6])
+      when 1
+      # Same Sides
+        pairsArray.push([0,4])
+        pairsArray.push([0,6])
+        pairsArray.push([6,2])
+      end
     when 3
       case pbSideSize(1)
-      when 3   # 3v3 (triple)
+      when 4 #3v4
+        pairsArray.push([0,1])
+        pairsArray.push([0,3])
+        pairsArray.push([2,1])
+        pairsArray.push([2,7])
+        pairsArray.push([2,5])
+        pairsArray.push([2,7])
+      # Same Sides
+        pairsArray.push([0,4])
+        pairsArray.push([1,5])
+        pairsArray.push([1,7])
+        pairsArray.push([7,3])
+      when 3 #3v3
         pairsArray.push([0,1])
         pairsArray.push([4,5])
-      when 2   # 3v2
+      # Same Sides
+        pairsArray.push([0,4])
+        pairsArray.push([1,5])
+      when 2 #3v2
         pairsArray.push([0,1])
         pairsArray.push([3,4])
+      # Same Sides
+        pairsArray.push([0,4])
+      when 1
+      # Same Sides
+        pairsArray.push([0,4])
       end
-    when 2       # 2v3
+    when 2
+      case pbSideSize(1)
+      when 4 #2v4
+      pairsArray.push([0,1])
+      pairsArray.push([2,7])
+      # Same Sides
+      pairsArray.push([7,5])
+      pairsArray.push([7,3])
+      pairsArray.push([1,3])
+      when 3 #2v3
       pairsArray.push([0,1])
       pairsArray.push([2,5])
+      # Same Sides
+      pairsArray.push([1,5])
+      end
     end
     # See if any pair matches the two battlers being assessed
     pairsArray.each do |pair|
@@ -726,6 +803,8 @@ class PokeBattle_Battle
       pbDisplay(_INTL("Mist swirled about the battlefield!"))
     when PBBattleTerrains::Psychic
       pbDisplay(_INTL("The battlefield got weird!"))
+    when PBBattleTerrains::Toxic
+      pbDisplay(_INTL("Toxins cover the ground!"))
     end
     # Check for terrain seeds that boost stats in a terrain
     eachBattler { |b| b.pbItemTerrainStatBoostCheck }

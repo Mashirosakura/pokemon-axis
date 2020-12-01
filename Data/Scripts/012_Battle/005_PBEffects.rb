@@ -117,6 +117,18 @@ begin
     WaterSport          = 111
     WeightChange        = 112
     Yawn                = 113
+    GorillaTactics      = 114
+    BallFetch           = 115
+    LashOut             = 118
+    BurningJealousy     = 119
+    NoRetreat           = 120
+    Obstruct            = 121
+    JawLock             = 122
+    JawLockUser         = 123
+    TarShot             = 124
+    Octolock            = 125
+    OctolockUser        = 126
+    BlunderPolicy       = 127
 
     #===========================================================================
     # These effects apply to a battler position
@@ -173,6 +185,15 @@ begin
     TrickRoom       = 10
     WaterSportField = 11
     WonderRoom      = 12
+    NeutralizingGas = 13
+
+    #===========================================================================
+    # These effects apply to the usage of a move
+    #===========================================================================
+    SkipAccuracyCheck = 0
+    SpecialUsage      = 1
+    PassedTrying      = 2
+    TotalDamage       = 3
   end
 
 rescue Exception

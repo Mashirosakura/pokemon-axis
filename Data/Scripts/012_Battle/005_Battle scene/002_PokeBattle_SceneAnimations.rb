@@ -103,12 +103,12 @@ class LineupAppearAnimation < PokeBattle_Animation
     when 0   # Player's lineup
       barX  = Graphics.width - BAR_DISPLAY_WIDTH
       barY  = Graphics.height - 142
-      ballX = barX + 44
+      ballX = barX + (44-50)
       ballY = barY - 30
     when 1   # Opposing lineup
       barX  = BAR_DISPLAY_WIDTH
-      barY  = 114
-      ballX = barX - 44 - 30   # 30 is width of ball icon
+      barY  = 126
+      ballX = (barX - 44 - 30) + 50   # 30 is width of ball icon
       ballY = barY - 30
       barX  -= bar.bitmap.width
     end
@@ -136,7 +136,15 @@ class LineupAppearAnimation < PokeBattle_Animation
     end
     # Opposing lineup
     # NOTE: This doesn't work well for 4+ opposing trainers.
-    ballsPerTrainer = PokeBattle_SceneConstants::NUM_BALLS/@partyStarts.length   # 6/3/2
+    if @partyStarts.length == 4
+    ballsPerTrainer = 32/@partyStarts.length   # 8/4/2
+    elsif @partyStarts.length == 3
+    ballsPerTrainer = 24/@partyStarts.length   # 8/4/2
+    elsif @partyStarts.length == 2
+    ballsPerTrainer = 16/@partyStarts.length   # 8/4/2
+    else
+    ballsPerTrainer = 8/@partyStarts.length   # 8/4/2
+    end
     startsIndex = idxBall/ballsPerTrainer
     teamIndex = idxBall%ballsPerTrainer
     ret = @partyStarts[startsIndex]+teamIndex
@@ -154,8 +162,32 @@ class LineupAppearAnimation < PokeBattle_Animation
     bar.setDelta(0,dir*Graphics.width/2,0)
     bar.moveDelta(0,8,-dir*Graphics.width/2,0)
     delay = bar.totalDuration
-    for i in 0...PokeBattle_SceneConstants::NUM_BALLS
+    if @partyStarts.length == 4
+     for i in 0...(32/4)
+      # Balls for first row (Single Trainer with >8 pokemon)
       createBall(i,(@fullAnim) ? delay+i*2 : 0,dir)
+      createBall(i+8,(@fullAnim) ? delay+i*2 : 0,dir)
+      createBall(i+16,(@fullAnim) ? delay+i*2 : 0,dir)
+      createBall(i+24,(@fullAnim) ? delay+i*2 : 0,dir)
+     end
+    elsif @partyStarts.length == 3
+    for i in 0...(24/3)
+     # Balls for first row (Single Trainer with >8 pokemon)
+     createBall(i,(@fullAnim) ? delay+i*2 : 0,dir)
+     createBall(i+8,(@fullAnim) ? delay+i*2 : 0,dir)
+     createBall(i+16,(@fullAnim) ? delay+i*2 : 0,dir)
+    end
+    elsif @partyStarts.length == 2
+    for i in 0...(16/2)
+     # Balls for first row (Single Trainer with >8 pokemon)
+     createBall(i,(@fullAnim) ? delay+i*2 : 0,dir)
+     createBall(i+8,(@fullAnim) ? delay+i*2 : 0,dir)
+    end
+    else
+    for i in 0...8
+     # Balls for first row (Single Trainer with >8 pokemon)
+     createBall(i,(@fullAnim) ? delay+i*2 : 0,dir)
+      end
     end
   end
 
@@ -176,8 +208,23 @@ class LineupAppearAnimation < PokeBattle_Animation
     ball = addSprite(@sprites["partyBall_#{@side}_#{idxBall}"])
     ball.setVisible(delay,true)
     ball.setName(delay,graphicFilename)
-    ball.setDelta(delay,dir*Graphics.width/2,0)
-    ball.moveDelta(delay,8,-dir*Graphics.width/2,0)
+    # First line of balls
+    if idxBall < 8
+     ball.setDelta(delay,dir*Graphics.width/2,0)
+     ball.moveDelta(delay,8,-dir*Graphics.width/2,0)
+    end
+    if idxBall < 16 && idxBall > 7
+     ball.setDelta(delay,dir*Graphics.width/2+256,-32)
+     ball.moveDelta(delay,8,-dir*Graphics.width/2,0)
+    end
+    if idxBall < 24 && idxBall > 15
+     ball.setDelta(delay,dir*Graphics.width/2+512,-64)
+     ball.moveDelta(delay,8,-dir*Graphics.width/2,0)
+    end
+    if idxBall < 32 && idxBall > 23
+     ball.setDelta(delay,dir*Graphics.width/2+768,-96)
+     ball.moveDelta(delay,8,-dir*Graphics.width/2,0)
+    end
   end
 end
 

@@ -12,8 +12,8 @@ class PokemonDataBox < SpriteWrapper
   # Maximum time in seconds to make a change to the HP bar.
   HP_BAR_CHANGE_TIME = 1.0
   STATUS_ICON_HEIGHT = 16
-  NAME_BASE_COLOR         = Color.new(72,72,72)
-  NAME_SHADOW_COLOR       = Color.new(184,184,184)
+  NAME_BASE_COLOR         = Color.new(255,255,255)
+  NAME_SHADOW_COLOR       = Color.new(120,120,120)
   MALE_BASE_COLOR         = Color.new(48,96,216)
   MALE_SHADOW_COLOR       = NAME_SHADOW_COLOR
   FEMALE_BASE_COLOR       = Color.new(248,88,40)
@@ -55,11 +55,11 @@ class PokemonDataBox < SpriteWrapper
     @databoxBitmap  = AnimatedBitmap.new(bgFilename)
     # Determine the co-ordinates of the data box and the left edge padding width
     if onPlayerSide
-      @spriteX = Graphics.width - 244
-      @spriteY = Graphics.height - 192
+      @spriteX = Graphics.width - 242
+      @spriteY = Graphics.height - 242
       @spriteBaseX = 34
     else
-      @spriteX = -16
+      @spriteX = -18
       @spriteY = 36
       @spriteBaseX = 16
     end
@@ -70,6 +70,9 @@ class PokemonDataBox < SpriteWrapper
     when 3
       @spriteX += [-12,  12, -6,  6,  0,  0][@battler.index]
       @spriteY += [-42, -46,  4,  0, 50, 46][@battler.index]
+    when 4
+      @spriteX += [-18, 18,-12,  12, -6,  6,  0,  0][@battler.index]
+      @spriteY += [-42,-46, 4, 0, 50, 46, 96, 92][@battler.index]
     end
   end
 
@@ -119,7 +122,7 @@ class PokemonDataBox < SpriteWrapper
   def y=(value)
     super
     @hpBar.y     = value+40
-    @expBar.y    = value+74
+    @expBar.y    = value+76
     @hpNumbers.y = value+52
   end
 
@@ -377,7 +380,7 @@ class AbilitySplashBar < SpriteWrapper
   attr_reader :battler
 
   TEXT_BASE_COLOR   = Color.new(0,0,0)
-  TEXT_SHADOW_COLOR = Color.new(248,248,248)
+  TEXT_SHADOW_COLOR = Color.new(190,190,190)
 
   def initialize(side,viewport=nil)
     super(viewport)
@@ -394,7 +397,7 @@ class AbilitySplashBar < SpriteWrapper
     self.bitmap = @contents
     pbSetSystemFont(self.bitmap)
     # Position the bar
-    self.x       = (side==0) ? -Graphics.width/2 : Graphics.width
+    self.x       = (side==0) ? -Graphics.width/2 : Graphics.width+(RXMOD/2)
     self.y       = (side==0) ? 180 : 80
     self.z       = 120
     self.visible = false
