@@ -85,37 +85,51 @@ begin
     Quash               = 79
     Rage                = 80
     RagePowder          = 81   # Used along with FollowMe
-    Rollout             = 82
-    Roost               = 83
-    ShellTrap           = 84
-    SkyDrop             = 85
-    SlowStart           = 86
-    SmackDown           = 87
-    Snatch              = 88
-    SpikyShield         = 89
-    Spotlight           = 90
-    Stockpile           = 91
-    StockpileDef        = 92
-    StockpileSpDef      = 93
-    Substitute          = 94
-    Taunt               = 95
-    Telekinesis         = 96
-    ThroatChop          = 97
-    Torment             = 98
-    Toxic               = 99
-    Transform           = 100
-    TransformSpecies    = 101
-    Trapping            = 102   # Trapping move
-    TrappingMove        = 103
-    TrappingUser        = 104
-    Truant              = 105
-    TwoTurnAttack       = 106
-    Type3               = 107
-    Unburden            = 108
-    Uproar              = 109
-    WaterSport          = 110
-    WeightChange        = 111
-    Yawn                = 112
+    Revenge             = 82
+    Rollout             = 83
+    Roost               = 84
+    ShellTrap           = 85
+    SkyDrop             = 86
+    SlowStart           = 87
+    SmackDown           = 88
+    Snatch              = 89
+    SpikyShield         = 90
+    Spotlight           = 91
+    Stockpile           = 92
+    StockpileDef        = 93
+    StockpileSpDef      = 94
+    Substitute          = 95
+    Taunt               = 96
+    Telekinesis         = 97
+    ThroatChop          = 98
+    Torment             = 99
+    Toxic               = 100
+    Transform           = 101
+    TransformSpecies    = 102
+    Trapping            = 103   # Trapping move
+    TrappingMove        = 104
+    TrappingUser        = 105
+    Truant              = 106
+    TwoTurnAttack       = 107
+    Type3               = 108
+    Unburden            = 109
+    Uproar              = 110
+    WaterSport          = 111
+    WeightChange        = 112
+    Yawn                = 113
+    GorillaTactics      = 114
+    BallFetch           = 115
+    LashOut             = 118
+    BurningJealousy     = 119
+    NoRetreat           = 120
+    Obstruct            = 121
+    JawLock             = 122
+    JawLockUser         = 123
+    TarShot             = 124
+    Octolock            = 125
+    OctolockUser        = 126
+    BlunderPolicy       = 127
+    SwitchedAlly        = 128
 
     #===========================================================================
     # These effects apply to a battler position
@@ -155,6 +169,8 @@ begin
     Tailwind           = 19
     ToxicSpikes        = 20
     WideGuard          = 21
+	StickyWebUser      = 22
+
 
     #===========================================================================
     # These effects apply to the battle (i.e. both sides)
@@ -172,6 +188,7 @@ begin
     TrickRoom       = 10
     WaterSportField = 11
     WonderRoom      = 12
+    NeutralizingGas = 13
   end
 
 rescue Exception
