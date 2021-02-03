@@ -8,7 +8,8 @@ class PokeBattle_Battler
   attr_accessor :species
   attr_accessor :type1
   attr_accessor :type2
-  attr_accessor :ability
+  attr_accessor :ability_id
+  attr_accessor :item_id
   attr_accessor :moves
   attr_accessor :gender
   attr_accessor :iv
@@ -59,11 +60,23 @@ class PokeBattle_Battler
     @pokemon.form = value if @pokemon
   end
 
-  attr_reader :item
+  def ability
+    return GameData::Ability.try_get(@ability_id)
+  end
+
+  def ability=(value)
+    new_ability = GameData::Ability.try_get(value)
+    @ability_id = (new_ability) ? new_ability.id : nil
+  end
+
+  def item
+    return GameData::Item.try_get(@item_id)
+  end
 
   def item=(value)
-    @item = value
-    @pokemon.setItem(value) if @pokemon
+    new_item = GameData::Item.try_get(value)
+    @item_id = (new_item) ? new_item.id : nil
+    @pokemon.item = @item_id if @pokemon
   end
 
   def defense
@@ -192,12 +205,19 @@ class PokeBattle_Battler
 
   def owned?
     return false if !@battle.wildBattle?
-    return $Trainer.owned[displaySpecies]
+    return $Trainer.owned?(displaySpecies)
   end
   alias owned owned?
 
-  def abilityName; return PBAbilities.getName(@ability); end
-  def itemName;    return PBItems.getName(@item);        end
+  def abilityName
+    abil = self.ability
+    return (abil) ? abil.name : ""
+  end
+
+  def itemName
+    itm = self.item
+    return (itm) ? itm.name : ""
+  end
 
   def pbThis(lowerCase=false)
     if opposes?
@@ -238,22 +258,22 @@ class PokeBattle_Battler
     speedMult = 1.0
     # Ability effects that alter calculated Speed
     if abilityActive?
-      speedMult = BattleHandlers.triggerSpeedCalcAbility(@ability,self,speedMult)
+      speedMult = BattleHandlers.triggerSpeedCalcAbility(self.ability,self,speedMult)
     end
     # Item effects that alter calculated Speed
     if itemActive?
-      speedMult = BattleHandlers.triggerSpeedCalcItem(@item,self,speedMult)
+      speedMult = BattleHandlers.triggerSpeedCalcItem(self.item,self,speedMult)
     end
     # Other effects
     speedMult *= 2 if pbOwnSide.effects[PBEffects::Tailwind]>0
     speedMult /= 2 if pbOwnSide.effects[PBEffects::Swamp]>0
     # Paralysis
     if status==PBStatuses::PARALYSIS && !hasActiveAbility?(:QUICKFEET)
-      speedMult /= (NEWEST_BATTLE_MECHANICS) ? 2 : 4
+      speedMult /= (Settings::MECHANICS_GENERATION >= 7) ? 2 : 4
     end
     # Badge multiplier
     if @battle.internalBattle && pbOwnedByPlayer? &&
-       @battle.pbPlayer.numbadges>=NUM_BADGES_BOOST_SPEED
+       @battle.pbPlayer.badge_count >= Settings::NUM_BADGES_BOOST_SPEED
       speedMult *= 1.1
     end
     # Calculation
@@ -265,10 +285,10 @@ class PokeBattle_Battler
     ret += @effects[PBEffects::WeightChange]
     ret = 1 if ret<1
     if abilityActive? && !@battle.moldBreaker
-      ret = BattleHandlers.triggerWeightCalcAbility(@ability,self,ret)
+      ret = BattleHandlers.triggerWeightCalcAbility(self.ability,self,ret)
     end
     if itemActive?
-      ret = BattleHandlers.triggerWeightCalcItem(@item,self,ret)
+      ret = BattleHandlers.triggerWeightCalcItem(self.item,self,ret)
     end
     return [ret,1].max
   end
@@ -297,35 +317,31 @@ class PokeBattle_Battler
     ret = [@type1]
     ret.push(@type2) if @type2!=@type1
     # Burn Up erases the Fire-type.
-    if @effects[PBEffects::BurnUp]
-      ret.reject! { |type| isConst?(type,PBTypes,:FIRE) }
-    end
+    ret.delete(:FIRE) if @effects[PBEffects::BurnUp]
     # Roost erases the Flying-type. If there are no types left, adds the Normal-
     # type.
     if @effects[PBEffects::Roost]
-      ret.reject! { |type| isConst?(type,PBTypes,:FLYING) }
-      ret.push(getConst(PBTypes,:NORMAL) || 0) if ret.length==0
+      ret.delete(:FLYING)
+      ret.push(:NORMAL) if ret.length == 0
     end
     # Add the third type specially.
-    if withType3 && @effects[PBEffects::Type3]>=0
+    if withType3 && @effects[PBEffects::Type3]
       ret.push(@effects[PBEffects::Type3]) if !ret.include?(@effects[PBEffects::Type3])
     end
     return ret
   end
 
   def pbHasType?(type)
-    type = getConst(PBTypes,type) if type.is_a?(Symbol) || type.is_a?(String)
-    return false if !type || type<0
+    return false if !type
     activeTypes = pbTypes(true)
-    return activeTypes.include?(type)
+    return activeTypes.include?(GameData::Type.get(type).id)
   end
 
   def pbHasOtherType?(type)
-    type = getConst(PBTypes,type) if type.is_a?(Symbol) || type.is_a?(String)
-    return false if !type || type<0
+    return false if !type
     activeTypes = pbTypes(true)
-    activeTypes.reject! { |t| t==type }
-    return activeTypes.length>0
+    activeTypes.delete(GameData::Type.get(type).id)
+    return activeTypes.length > 0
   end
 
   # NOTE: Do not create any held item which affects whether a Pokémon's ability
@@ -340,25 +356,20 @@ class PokeBattle_Battler
     return true
   end
 
-  def hasActiveAbility?(ability,ignoreFainted=false)
-    return false if !abilityActive?(ignoreFainted)
-    if ability.is_a?(Array)
-      ability.each do |a|
-        a = getID(PBAbilities,a)
-        return true if a!=0 && a==@ability
-      end
-      return false
-    end
-    ability = getID(PBAbilities,ability)
-    return ability!=0 && ability==@ability
+  def hasActiveAbility?(check_ability, ignore_fainted = false)
+    return false if !abilityActive?(ignore_fainted)
+    return check_ability.include?(@ability_id) if check_ability.is_a?(Array)
+    return check_ability == self.ability
   end
   alias hasWorkingAbility hasActiveAbility?
 
   # Applies to both losing self's ability (i.e. being replaced by another) and
   # having self's ability be negated.
   def unstoppableAbility?(abil = nil)
-    abil = @ability if !abil
-    abilityBlacklist = [
+    abil = @ability_id if !abil
+    abil = GameData::Ability.try_get(abil)
+    return false if !abil
+    ability_blacklist = [
       # Form-changing abilities
       :BATTLEBOND,
       :DISGUISE,
@@ -378,16 +389,15 @@ class PokeBattle_Battler
       :ASONEICE,
       :ASONEGHOST
     ]
-    abilityBlacklist.each do |a|
-      return true if isConst?(abil, PBAbilities, a)
-    end
-    return false
+    return ability_blacklist.include?(abil.id)
   end
 
   # Applies to gaining the ability.
   def ungainableAbility?(abil = nil)
-    abil = @ability if !abil
-    abilityBlacklist = [
+    abil = @ability_id if !abil
+    abil = GameData::Ability.try_get(abil)
+    return false if !abil
+    ability_blacklist = [
       # Form-changing abilities
       :BATTLEBOND,
       :DISGUISE,
@@ -410,10 +420,7 @@ class PokeBattle_Battler
 	  :NEUTRALIZINGGAS,
 	  :HUNGERSWITCH
     ]
-    abilityBlacklist.each do |a|
-      return true if isConst?(abil, PBAbilities, a)
-    end
-    return false
+    return ability_blacklist.include?(abil.id)
   end
 
   def itemActive?(ignoreFainted=false)
@@ -424,48 +431,40 @@ class PokeBattle_Battler
     return true
   end
 
-  def hasActiveItem?(item,ignoreFainted=false)
-    return false if !itemActive?(ignoreFainted)
-    if item.is_a?(Array)
-      item.each do |i|
-        i = getID(PBItems,i)
-        return true if i!=0 && i==@item
-      end
-      return false
-    end
-    item = getID(PBItems,item)
-    return item!=0 && item==@item
+  def hasActiveItem?(check_item, ignore_fainted = false)
+    return false if !itemActive?(ignore_fainted)
+    return check_item.include?(@item_id) if check_item.is_a?(Array)
+    return check_item == self.item
   end
   alias hasWorkingItem hasActiveItem?
 
   # Returns whether the specified item will be unlosable for this Pokémon.
   def unlosableItem?(check_item)
-    return false if check_item <= 0
-    return true if pbIsMail?(check_item)
+    return false if !check_item
+    return true if GameData::Item.get(check_item).is_mail?
     return false if @effects[PBEffects::Transform]
     # Items that change a Pokémon's form
     return true if @pokemon && @pokemon.getMegaForm(true) > 0   # Mega Stone
-    return pbIsUnlosableItem?(check_item, @species, @ability)
+    return GameData::Item.get(check_item).unlosable?(@species, self.ability)
   end
 
   def eachMove
-    @moves.each { |m| yield m if m && m.id != 0 }
+    @moves.each { |m| yield m }
   end
 
   def eachMoveWithIndex
-    @moves.each_with_index { |m, i| yield m, i if m && m.id != 0 }
+    @moves.each_with_index { |m, i| yield m, i }
   end
 
   def pbHasMove?(move_id)
-    move_id = getID(PBMoves, move_id)
-    return false if !move_id || move_id <= 0
+    return false if !move_id
     eachMove { |m| return true if m.id == move_id }
     return false
   end
 
   def pbHasMoveType?(check_type)
-    check_type = getConst(PBTypes, check_type)
-    return false if !check_type || check_type < 0
+    return false if !check_type
+    check_type = GameData::Type.get(check_type).id
     eachMove { |m| return true if m.type == check_type }
     return false
   end
@@ -483,9 +482,7 @@ class PokeBattle_Battler
   end
 
   def canChangeType?
-    return false if isConst?(@ability,PBAbilities,:MULTITYPE) ||
-                    isConst?(@ability,PBAbilities,:RKSSYSTEM)
-    return true
+    return ![:MULTITYPE, :RKSSYSTEM].include?(@ability_id)
   end
 
   def airborne?
@@ -555,28 +552,29 @@ class PokeBattle_Battler
 
   def affectedByPowder?(showMsg=false)
     return false if fainted?
-    return true if !NEWEST_BATTLE_MECHANICS
-    if pbHasType?(:GRASS)
+    if pbHasType?(:GRASS) && Settings::MORE_TYPE_EFFECTS
       @battle.pbDisplay(_INTL("{1} is unaffected!",pbThis)) if showMsg
       return false
     end
-    if hasActiveAbility?(:OVERCOAT) && !@battle.moldBreaker
-      if showMsg
-        @battle.pbShowAbilitySplash(self)
-        if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
-          @battle.pbDisplay(_INTL("{1} is unaffected!",pbThis))
-        else
-          @battle.pbDisplay(_INTL("{1} is unaffected because of its {2}!",pbThis,abilityName))
+    if Settings::MECHANICS_GENERATION >= 6
+      if hasActiveAbility?(:OVERCOAT) && !@battle.moldBreaker
+        if showMsg
+          @battle.pbShowAbilitySplash(self)
+          if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
+            @battle.pbDisplay(_INTL("{1} is unaffected!",pbThis))
+          else
+            @battle.pbDisplay(_INTL("{1} is unaffected because of its {2}!",pbThis,abilityName))
+          end
+          @battle.pbHideAbilitySplash(self)
         end
-        @battle.pbHideAbilitySplash(self)
+        return false
       end
-      return false
-    end
-    if hasActiveItem?(:SAFETYGOGGLES)
-      if showMsg
-        @battle.pbDisplay(_INTL("{1} is unaffected because of its {2}!",pbThis,itemName))
+      if hasActiveItem?(:SAFETYGOGGLES)
+        if showMsg
+          @battle.pbDisplay(_INTL("{1} is unaffected because of its {2}!",pbThis,itemName))
+        end
+        return false
       end
-      return false
     end
     return true
   end
@@ -606,7 +604,7 @@ class PokeBattle_Battler
   end
 
   def usingMultiTurnAttack?
-    return true if @effects[PBEffects::TwoTurnAttack]>0
+    return true if @effects[PBEffects::TwoTurnAttack]
     return true if @effects[PBEffects::HyperBeam]>0
     return true if @effects[PBEffects::Rollout]>0
     return true if @effects[PBEffects::Outrage]>0
@@ -616,8 +614,8 @@ class PokeBattle_Battler
   end
 
   def inTwoTurnAttack?(*arg)
-    return false if @effects[PBEffects::TwoTurnAttack]==0
-    ttaFunction = pbGetMoveData(@effects[PBEffects::TwoTurnAttack],MOVE_FUNCTION_CODE)
+    return false if !@effects[PBEffects::TwoTurnAttack]
+    ttaFunction = GameData::Move.get(@effects[PBEffects::TwoTurnAttack]).function_code
     arg.each { |a| return true if a==ttaFunction }
     return false
   end
@@ -627,7 +625,7 @@ class PokeBattle_Battler
   end
 
   def pbEncoredMoveIndex
-    return -1 if @effects[PBEffects::Encore]==0 || @effects[PBEffects::EncoreMove]==0
+    return -1 if @effects[PBEffects::Encore]==0 || !@effects[PBEffects::EncoreMove]
     ret = -1
     eachMoveWithIndex do |m,i|
       next if m.id!=@effects[PBEffects::EncoreMove]

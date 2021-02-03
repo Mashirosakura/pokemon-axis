@@ -65,12 +65,12 @@ class PokeBattle_Scene
     end
     # Player's and partner trainer's back sprite
     @battle.player.each_with_index do |p,i|
-      pbCreateTrainerBackSprite(i,p.trainertype,@battle.player.length)
+      pbCreateTrainerBackSprite(i,p.trainer_type,@battle.player.length)
     end
     # Opposing trainer(s) sprites
     if @battle.trainerBattle?
       @battle.opponent.each_with_index do |p,i|
-        pbCreateTrainerFrontSprite(i,p.trainertype,@battle.opponent.length)
+        pbCreateTrainerFrontSprite(i,p.trainer_type,@battle.opponent.length)
       end
     end
     # Data boxes and Pokémon sprites
@@ -93,8 +93,8 @@ class PokeBattle_Scene
 
   def pbCreateBackdropSprites
     case @battle.time
-    when 1; time = "eve"
-    when 2; time = "night"
+    when 1 then time = "eve"
+    when 2 then time = "night"
     end
     # Put everything together into backdrop, bases and message bar filenames
     backdropFilename = @battle.backdrop
@@ -152,9 +152,9 @@ class PokeBattle_Scene
 
   def pbCreateTrainerBackSprite(idxTrainer,trainerType,numTrainers=1)
     if idxTrainer==0   # Player's sprite
-      trainerFile = pbPlayerSpriteBackFile(trainerType)
+      trainerFile = GameData::TrainerType.player_back_sprite_filename(trainerType)
     else   # Partner trainer's sprite
-      trainerFile = pbTrainerSpriteBackFile(trainerType)
+      trainerFile = GameData::TrainerType.back_sprite_filename(trainerType)
     end
     spriteX, spriteY = PokeBattle_SceneConstants.pbTrainerPosition(0,idxTrainer,numTrainers)
     trainer = pbAddSprite("player_#{idxTrainer+1}",spriteX,spriteY,trainerFile,@viewport)
@@ -170,7 +170,7 @@ class PokeBattle_Scene
   end
 
   def pbCreateTrainerFrontSprite(idxTrainer,trainerType,numTrainers=1)
-    trainerFile = pbTrainerSpriteFile(trainerType)
+    trainerFile = GameData::TrainerType.front_sprite_filename(trainerType)
     spriteX, spriteY = PokeBattle_SceneConstants.pbTrainerPosition(1,idxTrainer,numTrainers)
     trainer = pbAddSprite("trainer_#{idxTrainer+1}",spriteX,spriteY,trainerFile,@viewport)
     return if !trainer.bitmap

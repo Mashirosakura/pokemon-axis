@@ -61,7 +61,7 @@ class PokeBattle_Battler
     }
     @battle.pbJudge
     # Update priority order
-    @battle.pbCalculatePriority if DYNAMIC_PRIORITY
+    @battle.pbCalculatePriority if Settings::RECALCULATE_TURN_ORDER_AFTER_SPEED_CHANGES
     return true
   end
 
@@ -80,7 +80,7 @@ class PokeBattle_Battler
     # Encore's effect ends if the encored move is no longer available
     if @effects[PBEffects::Encore]>0 && pbEncoredMoveIndex<0
       @effects[PBEffects::Encore]     = 0
-      @effects[PBEffects::EncoreMove] = 0
+      @effects[PBEffects::EncoreMove] = nil
     end
   end
 
@@ -96,12 +96,12 @@ class PokeBattle_Battler
       pbConfuse(_INTL("{1} became confused due to fatigue!",pbThis))
     end
     # Cancel usage of most multi-turn moves
-    @effects[PBEffects::TwoTurnAttack] = 0
+    @effects[PBEffects::TwoTurnAttack] = nil
     @effects[PBEffects::Rollout]       = 0
     @effects[PBEffects::Outrage]       = 0
     @effects[PBEffects::Uproar]        = 0
     @effects[PBEffects::Bide]          = 0
-    @currentMove = 0
+    @currentMove = nil
     # Reset counters for moves which increase them when used in succession
     @effects[PBEffects::FuryCutter]    = 0
   end
@@ -114,14 +114,14 @@ class PokeBattle_Battler
     end
     if @effects[PBEffects::ChoiceBand]<0 &&
        hasActiveItem?([:CHOICEBAND,:CHOICESPECS,:CHOICESCARF])
-      if @lastMoveUsed>=0 && pbHasMove?(@lastMoveUsed)
+      if @lastMoveUsed && pbHasMove?(@lastMoveUsed)
         @effects[PBEffects::ChoiceBand] = @lastMoveUsed
-      elsif @lastRegularMoveUsed>=0 && pbHasMove?(@lastRegularMoveUsed)
+      elsif @lastRegularMoveUsed && pbHasMove?(@lastRegularMoveUsed)
         @effects[PBEffects::ChoiceBand] = @lastRegularMoveUsed
       end
     end
     @effects[PBEffects::Charge]      = 0 if @effects[PBEffects::Charge]==1
-    @effects[PBEffects::GemConsumed] = 0
+    @effects[PBEffects::GemConsumed] = nil
     @battle.eachBattler { |b| b.pbContinualAbilityChecks }   # Trace, end primordial weathers
   end
 
@@ -129,7 +129,7 @@ class PokeBattle_Battler
     @damageState.reset
     @damageState.initialHP = @hp
     confusionMove = PokeBattle_Confusion.new(@battle,nil)
-    confusionMove.calcType = confusionMove.pbCalcType(self)   # -1
+    confusionMove.calcType = confusionMove.pbCalcType(self)   # nil
     @damageState.typeMod = confusionMove.pbCalcTypeMod(confusionMove.calcType,self,self)   # 8
     confusionMove.pbCheckDamageAbsorption(self,self)
     confusionMove.pbCalcDamage(self,self)
@@ -154,7 +154,7 @@ class PokeBattle_Battler
     if idxMove>=0
       choice[2] = @moves[idxMove]
     else
-      choice[2] = PokeBattle_Move.pbFromPBMove(@battle,PBMove.new(moveID))   # PokeBattle_Move object
+      choice[2] = PokeBattle_Move.from_pokemon_move(@battle, Pokemon::Move.new(moveID))
       choice[2].pp = -1
     end
     choice[3] = target     # Target (-1 means no target yet)
@@ -173,7 +173,7 @@ class PokeBattle_Battler
     pbBeginTurn(choice)
     # Force the use of certain moves if they're already being used
     if usingMultiTurnAttack?
-      choice[2] = PokeBattle_Move.pbFromPBMove(@battle,PBMove.new(@currentMove))
+      choice[2] = PokeBattle_Move.from_pokemon_move(@battle, Pokemon::Move.new(@currentMove))
       specialUsage = true
     elsif @effects[PBEffects::Encore]>0 && choice[1]>=0 &&
        @battle.pbCanShowCommands?(@index)
@@ -188,14 +188,14 @@ class PokeBattle_Battler
     end
     # Labels the move being used as "move"
     move = choice[2]
-    return if !move || move.id==0   # if move was not chosen somehow
+    return if !move   # if move was not chosen somehow
     # Try to use the move (inc. disobedience)
     @lastMoveFailed = false
     if !pbTryUseMove(choice,move,specialUsage,skipAccuracyCheck)
-      @lastMoveUsed     = -1
-      @lastMoveUsedType = -1
+      @lastMoveUsed     = nil
+      @lastMoveUsedType = nil
       if !specialUsage
-        @lastRegularMoveUsed   = -1
+        @lastRegularMoveUsed   = nil
         @lastRegularMoveTarget = -1
       end
       @battle.pbGainExp   # In case self is KO'd due to confusion
@@ -204,15 +204,15 @@ class PokeBattle_Battler
       return
     end
     move = choice[2]   # In case disobedience changed the move to be used
-    return if !move || move.id==0   # if move was not chosen somehow
+    return if !move   # if move was not chosen somehow
     # Subtract PP
     if !specialUsage
       if !pbReducePP(move)
         @battle.pbDisplay(_INTL("{1} used {2}!",pbThis,move.name))
         @battle.pbDisplay(_INTL("But there was no PP left for the move!"))
-        @lastMoveUsed          = -1
-        @lastMoveUsedType      = -1
-        @lastRegularMoveUsed   = -1
+        @lastMoveUsed          = nil
+        @lastMoveUsedType      = nil
+        @lastRegularMoveUsed   = nil
         @lastRegularMoveTarget = -1
         @lastMoveFailed        = true
         pbCancelMoves
@@ -221,10 +221,10 @@ class PokeBattle_Battler
       end
     end
     # Stance Change
-    if isSpecies?(:AEGISLASH) && isConst?(@ability,PBAbilities,:STANCECHANGE)
+    if isSpecies?(:AEGISLASH) && self.ability == :STANCECHANGE
       if move.damagingMove?
         pbChangeForm(1,_INTL("{1} changed to Blade Forme!",pbThis))
-      elsif isConst?(move.id,PBMoves,:KINGSSHIELD)
+      elsif move.id == :KINGSSHIELD
         pbChangeForm(0,_INTL("{1} changed to Shield Forme!",pbThis))
       end
     end
@@ -238,13 +238,13 @@ class PokeBattle_Battler
       @effects[PBEffects::TwoTurnAttack] = move.id
       @currentMove = move.id
     else
-      @effects[PBEffects::TwoTurnAttack] = 0   # Cancel use of two-turn attack
+      @effects[PBEffects::TwoTurnAttack] = nil   # Cancel use of two-turn attack
     end
     # Add to counters for moves which increase them when used in succession
     move.pbChangeUsageCounters(self,specialUsage)
     # Charge up Metronome item
     if hasActiveItem?(:METRONOME) && !move.callsAnotherMove?
-      if @lastMoveUsed==move.id && !@lastMoveFailed
+      if @lastMoveUsed && @lastMoveUsed==move.id && !@lastMoveFailed
         @effects[PBEffects::Metronome] += 1
       else
         @effects[PBEffects::Metronome] = 0
@@ -258,7 +258,7 @@ class PokeBattle_Battler
       @lastRegularMoveTarget = choice[3]   # For Instruct (remembering original target is fine)
       @movesUsed.push(move.id) if !@movesUsed.include?(move.id)   # For Last Resort
     end
-    @battle.lastMoveUsed = move.id 
+    @battle.lastMoveUsed = move.id
     @battle.lastMoveUser = @index   # For "self KO" battle clause to avoid draws
     @battle.successStates[@index].useState = 1   # Battle Arena - assume failure
     # Find the default user (self or Snatcher) and target(s)
@@ -323,7 +323,7 @@ class PokeBattle_Battler
       @battle.pbDisplay(_INTL("{1} melted the ice!",user.pbThis))
     end
     # Powder
-    if user.effects[PBEffects::Powder] && isConst?(move.calcType,PBTypes,:FIRE)
+    if user.effects[PBEffects::Powder] && move.calcType == :FIRE
       @battle.pbCommonAnimation("Powder",user)
       @battle.pbDisplay(_INTL("When the flame touched the powder on the Pokémon, it exploded!"))
       user.lastMoveFailed = true
@@ -346,7 +346,7 @@ class PokeBattle_Battler
     if move.damagingMove?
       case @battle.pbWeather
       when PBWeather::HeavyRain
-        if isConst?(move.calcType,PBTypes,:FIRE)
+        if move.calcType == :FIRE
           @battle.pbDisplay(_INTL("The Fire-type attack fizzled out in the heavy rain!"))
           user.lastMoveFailed = true
           pbCancelMoves
@@ -354,7 +354,7 @@ class PokeBattle_Battler
           return
         end
       when PBWeather::HarshSun
-        if isConst?(move.calcType,PBTypes,:WATER)
+        if move.calcType == :WATER
           @battle.pbDisplay(_INTL("The Water-type attack evaporated in the harsh sunlight!"))
           user.lastMoveFailed = true
           pbCancelMoves
@@ -368,7 +368,7 @@ class PokeBattle_Battler
       if user.pbHasOtherType?(move.calcType) && !PBTypes.isPseudoType?(move.calcType)
         @battle.pbShowAbilitySplash(user)
         user.pbChangeTypes(move.calcType)
-        typeName = PBTypes.getName(move.calcType)
+        typeName = GameData::Type.get(move.calcType).name
         @battle.pbDisplay(_INTL("{1} transformed into the {2} type!",user.pbThis,typeName))
         @battle.pbHideAbilitySplash(user)
         # NOTE: The GF games say that if Curse is used by a non-Ghost-type
@@ -526,7 +526,7 @@ class PokeBattle_Battler
     pbEndTurn(choice)
     # Instruct
     @battle.eachBattler do |b|
-      next if !b.effects[PBEffects::Instruct]
+      next if !b.effects[PBEffects::Instruct] || !b.lastMoveUsed
       b.effects[PBEffects::Instruct] = false
       idxMove = -1
       b.eachMoveWithIndex { |m,i| idxMove = i if m.id==b.lastMoveUsed }
@@ -654,12 +654,12 @@ class PokeBattle_Battler
     # Show move animation (for this hit)
     move.pbShowAnimation(move.id,user,targets,hitNum)
     # Type-boosting Gem consume animation/message
-    if user.effects[PBEffects::GemConsumed]>0 && hitNum==0
+    if user.effects[PBEffects::GemConsumed] && hitNum==0
       # NOTE: The consume animation and message for Gems are shown now, but the
       #       actual removal of the item happens in def pbEffectsAfterMove.
       @battle.pbCommonAnimation("UseItem",user)
       @battle.pbDisplay(_INTL("The {1} strengthened {2}'s power!",
-         PBItems.getName(user.effects[PBEffects::GemConsumed]),move.name))
+         GameData::Item.get(user.effects[PBEffects::GemConsumed]).name,move.name))
     end
     # Messages about missed target(s) (relevant for multi-target moves only)
     targets.each do |b|

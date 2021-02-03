@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class PokemonSystem
   attr_accessor :textspeed
   attr_accessor :battlescene
@@ -6,7 +9,6 @@ class PokemonSystem
   attr_writer   :textskin
   attr_accessor :font
   attr_accessor :screensize
-  attr_writer   :border
   attr_writer   :language
   attr_writer   :runstyle
   attr_writer   :bgmvolume
@@ -17,146 +19,25 @@ class PokemonSystem
     @textspeed   = 1     # Text speed (0=slow, 1=normal, 2=fast)
     @battlescene = 0     # Battle effects (animations) (0=on, 1=off)
     @battlestyle = 0     # Battle style (0=switch, 1=set)
-    @frame       = 0     # Default window frame (see also $TextFrames)
+    @frame       = 0     # Default window frame (see also Settings::MENU_WINDOWSKINS)
     @textskin    = 0     # Speech frame
-    @font        = 0     # Font (see also $VersionStyles)
-    @screensize  = (SCREEN_ZOOM.floor).to_i   # 0=half size, 1=full size, 2=double size
-    @border      = 0     # Screen border (0=off, 1=on)
-    @language    = 0     # Language (see also LANGUAGES in script PokemonSystem)
+    @font        = 0     # Font (see also Settings::FONT_OPTIONS)
+    @screensize  = (Settings::SCREEN_SCALE * 2).floor - 1   # 0=half size, 1=full size, 2=full-and-a-half size, 3=double size
+    @language    = 0     # Language (see also Settings::LANGUAGES in script PokemonSystem)
     @runstyle    = 0     # Run key functionality (0=hold to run, 1=toggle auto-run)
     @bgmvolume   = 100   # Volume of background music and ME
     @sevolume    = 100   # Volume of sound effects
     @textinput   = 0     # Text input mode (0=cursor, 1=keyboard)
   end
 
-  def textskin;  return @textskin || 0;    end
-  def border;    return @border || 0;      end
-  def language;  return @language || 0;    end
-  def runstyle;  return @runstyle || 0;    end
-  def bgmvolume; return @bgmvolume || 100; end
-  def sevolume;  return @sevolume || 100;  end
-  def textinput; return @textinput || 0;   end
-  def tilemap;   return MAP_VIEW_MODE;     end
+  def textskin;  return @textskin || 0;          end
+  def language;  return @language || 0;          end
+  def runstyle;  return @runstyle || 0;          end
+  def bgmvolume; return @bgmvolume || 100;       end
+  def sevolume;  return @sevolume || 100;        end
+  def textinput; return @textinput || 0;         end
+  def tilemap;   return Settings::MAP_VIEW_MODE; end
 end
-
-
-
-#===============================================================================
-# Stores game options
-# Default options are at the top of script section SpriteWindow.
-#===============================================================================
-$SpeechFrames = [
-  MessageConfig::TextSkinName,   # Default: speech hgss 1
-  "speech hgss 2",
-  "speech hgss 3",
-  "speech hgss 4",
-  "speech hgss 5",
-  "speech hgss 6",
-  "speech hgss 7",
-  "speech hgss 8",
-  "speech hgss 9",
-  "speech hgss 10",
-  "speech hgss 11",
-  "speech hgss 12",
-  "speech hgss 13",
-  "speech hgss 14",
-  "speech hgss 15",
-  "speech hgss 16",
-  "speech hgss 17",
-  "speech hgss 18",
-  "speech hgss 19",
-  "speech hgss 20",
-  "speech pl 18"
-]
-
-$TextFrames = [
-  "Graphics/Windowskins/"+MessageConfig::ChoiceSkinName,   # Default: choice 1
-  "Graphics/Windowskins/choice 2",
-  "Graphics/Windowskins/choice 3",
-  "Graphics/Windowskins/choice 4",
-  "Graphics/Windowskins/choice 5",
-  "Graphics/Windowskins/choice 6",
-  "Graphics/Windowskins/choice 7",
-  "Graphics/Windowskins/choice 8",
-  "Graphics/Windowskins/choice 9",
-  "Graphics/Windowskins/choice 10",
-  "Graphics/Windowskins/choice 11",
-  "Graphics/Windowskins/choice 12",
-  "Graphics/Windowskins/choice 13",
-  "Graphics/Windowskins/choice 14",
-  "Graphics/Windowskins/choice 15",
-  "Graphics/Windowskins/choice 16",
-  "Graphics/Windowskins/choice 17",
-  "Graphics/Windowskins/choice 18",
-  "Graphics/Windowskins/choice 19",
-  "Graphics/Windowskins/choice 20",
-  "Graphics/Windowskins/choice 21",
-  "Graphics/Windowskins/choice 22",
-  "Graphics/Windowskins/choice 23",
-  "Graphics/Windowskins/choice 24",
-  "Graphics/Windowskins/choice 25",
-  "Graphics/Windowskins/choice 26",
-  "Graphics/Windowskins/choice 27",
-  "Graphics/Windowskins/choice 28"
-]
-
-$VersionStyles = [
-  [MessageConfig::FontName],   # Default font style - Power Green/"Pokemon Emerald"
-  ["Power Red and Blue"],
-  ["Power Red and Green"],
-  ["Power Clear"]
-]
-
-def pbSettingToTextSpeed(speed)
-  case speed
-  when 0; return 2
-  when 1; return 1
-  when 2; return -2
-  end
-  return MessageConfig::TextSpeed || 1
-end
-
-
-
-module MessageConfig
-  def self.pbDefaultSystemFrame
-    begin
-      return pbResolveBitmap($TextFrames[$PokemonSystem.frame]) || ""
-    rescue
-      return pbResolveBitmap("Graphics/Windowskins/"+MessageConfig::ChoiceSkinName) || ""
-    end
-  end
-
-  def self.pbDefaultSpeechFrame
-    begin
-      return pbResolveBitmap("Graphics/Windowskins/"+$SpeechFrames[$PokemonSystem.textskin]) || ""
-    rescue
-      return pbResolveBitmap("Graphics/Windowskins/"+MessageConfig::TextSkinName) || ""
-    end
-  end
-
-  def self.pbDefaultSystemFontName
-    begin
-      return MessageConfig.pbTryFonts($VersionStyles[$PokemonSystem.font][0],"Arial Narrow","Arial")
-    rescue
-      return MessageConfig.pbTryFonts(MessageConfig::FontName,"Arial Narrow","Arial")
-    end
-  end
-
-  def self.pbDefaultTextSpeed
-    return pbSettingToTextSpeed(($PokemonSystem.textspeed rescue nil))
-  end
-
-  def pbGetSystemTextSpeed
-    begin
-      return $PokemonSystem.textspeed
-    rescue
-      return (Graphics.frame_rate>40) ? 2 :  3
-    end
-  end
-end
-
-
 
 #===============================================================================
 #
@@ -171,8 +52,9 @@ module PropertyMixin
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class EnumOption
   include PropertyMixin
   attr_reader :values
@@ -198,8 +80,9 @@ class EnumOption
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class EnumOption2
   include PropertyMixin
   attr_reader :values
@@ -225,8 +108,9 @@ class EnumOption2
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class NumberOption
   include PropertyMixin
   attr_reader :name
@@ -256,8 +140,9 @@ class NumberOption
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class SliderOption
   include PropertyMixin
   attr_reader :name
@@ -287,8 +172,6 @@ class SliderOption
     return index-@optstart
   end
 end
-
-
 
 #===============================================================================
 # Main options list
@@ -331,7 +214,8 @@ class Window_PokemonOption < Window_DrawableCommand
     rect = drawCursor(index,rect)
     optionname = (index==@options.length) ? _INTL("Cancel") : @options[index].name
     optionwidth = rect.width*9/20
-    pbDrawShadowText(self.contents,rect.x,rect.y,optionwidth,rect.height,optionname,
+    text_y = rect.y + 6
+    pbDrawShadowText(self.contents,rect.x,text_y,optionwidth,rect.height,optionname,
        @nameBaseColor,@nameShadowColor)
     return if index==@options.length
     if @options[index].is_a?(EnumOption)
@@ -345,7 +229,7 @@ class Window_PokemonOption < Window_DrawableCommand
         xpos = optionwidth+rect.x
         ivalue = 0
         for value in @options[index].values
-          pbDrawShadowText(self.contents,xpos,rect.y,optionwidth,rect.height,value,
+          pbDrawShadowText(self.contents,xpos,text_y,optionwidth,rect.height,value,
              (ivalue==self[index]) ? @selBaseColor : self.baseColor,
              (ivalue==self[index]) ? @selShadowColor : self.shadowColor
           )
@@ -354,14 +238,14 @@ class Window_PokemonOption < Window_DrawableCommand
           ivalue += 1
         end
       else
-        pbDrawShadowText(self.contents,rect.x+optionwidth,rect.y,optionwidth,rect.height,
+        pbDrawShadowText(self.contents,rect.x+optionwidth,text_y,optionwidth,rect.height,
            optionname,self.baseColor,self.shadowColor)
       end
     elsif @options[index].is_a?(NumberOption)
       value = _INTL("Type {1}/{2}",@options[index].optstart+self[index],
          @options[index].optend-@options[index].optstart+1)
       xpos = optionwidth+rect.x
-      pbDrawShadowText(self.contents,xpos,rect.y,optionwidth,rect.height,value,
+      pbDrawShadowText(self.contents,xpos,text_y,optionwidth,rect.height,value,
          @selBaseColor,@selShadowColor)
     elsif @options[index].is_a?(SliderOption)
       value = sprintf(" %d",@options[index].optend)
@@ -375,12 +259,12 @@ class Window_PokemonOption < Window_DrawableCommand
          8,16,@selBaseColor)
       value = sprintf("%d",@options[index].optstart+self[index])
       xpos += optionwidth-self.contents.text_size(value).width
-      pbDrawShadowText(self.contents,xpos,rect.y,optionwidth,rect.height,value,
+      pbDrawShadowText(self.contents,xpos,text_y,optionwidth,rect.height,value,
          @selBaseColor,@selShadowColor)
     else
       value = @options[index].values[self[index]]
       xpos = optionwidth+rect.x
-      pbDrawShadowText(self.contents,xpos,rect.y,optionwidth,rect.height,value,
+      pbDrawShadowText(self.contents,xpos,text_y,optionwidth,rect.height,value,
          @selBaseColor,@selShadowColor)
     end
   end
@@ -404,8 +288,6 @@ class Window_PokemonOption < Window_DrawableCommand
     refresh if dorefresh
   end
 end
-
-
 
 #===============================================================================
 # Options main screen
@@ -462,7 +344,7 @@ class PokemonOption_Scene
          proc { $PokemonSystem.textspeed },
          proc { |value|
            $PokemonSystem.textspeed = value
-           MessageConfig.pbSetTextSpeed(pbSettingToTextSpeed(value))
+           MessageConfig.pbSetTextSpeed(MessageConfig.pbSettingToTextSpeed(value))
          }
        ),
        EnumOption.new(_INTL("Battle Effects"),[_INTL("On"),_INTL("Off")],
@@ -482,50 +364,37 @@ class PokemonOption_Scene
            end
          }
        ),
-       NumberOption.new(_INTL("Speech Frame"),1,$SpeechFrames.length,
+       NumberOption.new(_INTL("Speech Frame"),1,Settings::SPEECH_WINDOWSKINS.length,
          proc { $PokemonSystem.textskin },
          proc { |value|
            $PokemonSystem.textskin = value
-           MessageConfig.pbSetSpeechFrame("Graphics/Windowskins/" + $SpeechFrames[value])
+           MessageConfig.pbSetSpeechFrame("Graphics/Windowskins/" + Settings::SPEECH_WINDOWSKINS[value])
          }
        ),
-       NumberOption.new(_INTL("Menu Frame"),1,$TextFrames.length,
+       NumberOption.new(_INTL("Menu Frame"),1,Settings::MENU_WINDOWSKINS.length,
          proc { $PokemonSystem.frame },
          proc { |value|
            $PokemonSystem.frame = value
-           MessageConfig.pbSetSystemFrame("Graphics/Windowskins/" + $TextFrames[value])
+           MessageConfig.pbSetSystemFrame("Graphics/Windowskins/" + Settings::MENU_WINDOWSKINS[value])
          }
        ),
        EnumOption.new(_INTL("Font Style"),[_INTL("Em"),_INTL("R/S"),_INTL("FRLG"),_INTL("DP")],
          proc { $PokemonSystem.font },
          proc { |value|
            $PokemonSystem.font = value
-           MessageConfig.pbSetSystemFontName($VersionStyles[value])
+           MessageConfig.pbSetSystemFontName(Settings::FONT_OPTIONS[value])
          }
        ),
        EnumOption.new(_INTL("Text Entry"),[_INTL("Cursor"),_INTL("Keyboard")],
          proc { $PokemonSystem.textinput },
          proc { |value| $PokemonSystem.textinput = value }
        ),
-       EnumOption.new(_INTL("Screen Size"),[_INTL("S"),_INTL("M"),_INTL("L"),_INTL("Full")],
-         proc { [$PokemonSystem.screensize,3].min },
+       EnumOption.new(_INTL("Screen Size"),[_INTL("S"),_INTL("M"),_INTL("L"),_INTL("XL"),_INTL("Full")],
+         proc { [$PokemonSystem.screensize, 4].min },
          proc { |value|
-           oldvalue = $PokemonSystem.screensize
-           $PokemonSystem.screensize = value
-           if value!=oldvalue
+           if $PokemonSystem.screensize != value
+             $PokemonSystem.screensize = value
              pbSetResizeFactor($PokemonSystem.screensize)
-             ObjectSpace.each_object(TilemapLoader) { |o| o.updateClass if !o.disposed? }
-           end
-         }
-       ),
-       EnumOption.new(_INTL("Screen Border"),[_INTL("Off"),_INTL("On")],
-         proc { $PokemonSystem.border },
-         proc { |value|
-           oldvalue = $PokemonSystem.border
-           $PokemonSystem.border = value
-           if value!=oldvalue
-             pbSetResizeFactor($PokemonSystem.screensize)
-             ObjectSpace.each_object(TilemapLoader) { |o| o.updateClass if !o.disposed? }
            end
          }
        )
@@ -601,8 +470,6 @@ class PokemonOption_Scene
     @viewport.dispose
   end
 end
-
-
 
 #===============================================================================
 #

@@ -38,31 +38,31 @@ module PBDayNight
   @dayNightToneLastUpdate = nil
   @oneOverSixty = 1/60.0
 
-# Returns true if it's day.
+  # Returns true if it's day.
   def self.isDay?(time=nil)
     time = pbGetTimeNow if !time
     return (time.hour>=5 && time.hour<20)
   end
 
-# Returns true if it's night.
+  # Returns true if it's night.
   def self.isNight?(time=nil)
     time = pbGetTimeNow if !time
     return (time.hour>=20 || time.hour<5)
   end
 
-# Returns true if it's morning.
+  # Returns true if it's morning.
   def self.isMorning?(time=nil)
     time = pbGetTimeNow if !time
     return (time.hour>=5 && time.hour<10)
   end
 
-# Returns true if it's the afternoon.
+  # Returns true if it's the afternoon.
   def self.isAfternoon?(time=nil)
     time = pbGetTimeNow if !time
     return (time.hour>=14 && time.hour<17)
   end
 
-# Returns true if it's the evening.
+  # Returns true if it's the evening.
   def self.isEvening?(time=nil)
     time = pbGetTimeNow if !time
     return (time.hour>=17 && time.hour<20)
@@ -81,11 +81,11 @@ module PBDayNight
     return 255*time/(12*60)
   end
 
-# Gets a Tone object representing a suggested shading
-# tone for the current time of day.
+  # Gets a Tone object representing a suggested shading
+  # tone for the current time of day.
   def self.getTone
     @cachedTone = Tone.new(0,0,0) if !@cachedTone
-    return @cachedTone if !TIME_SHADING
+    return @cachedTone if !Settings::TIME_SHADING
     if !@dayNightToneLastUpdate ||
        Graphics.frame_count-@dayNightToneLastUpdate>=Graphics.frame_rate*30
       getToneInternal
@@ -100,8 +100,6 @@ module PBDayNight
   end
 
   private
-
-# Internal function
 
   def self.getToneInternal
     # Calculates the tone for the current frame, used for day/night effects
@@ -123,7 +121,8 @@ end
 
 def pbDayNightTint(object)
   return if !$scene.is_a?(Scene_Map)
-  if TIME_SHADING && pbGetMetadata($game_map.map_id,MetadataOutdoor)
+  if Settings::TIME_SHADING && GameData::MapMetadata.exists?($game_map.map_id) &&
+     GameData::MapMetadata.get($game_map.map_id).outdoor_map
     tone = PBDayNight.getTone
     object.tone.set(tone.red,tone.green,tone.blue,tone.gray)
   else

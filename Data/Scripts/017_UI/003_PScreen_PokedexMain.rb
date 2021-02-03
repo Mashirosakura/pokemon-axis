@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class Window_Pokedex < Window_DrawableCommand
   def initialize(x,y,width,height,viewport)
     @commands = []
@@ -35,8 +38,8 @@ class Window_Pokedex < Window_DrawableCommand
     species     = @commands[index][0]
     indexNumber = @commands[index][4]
     indexNumber -= 1 if @commands[index][5]
-    if $Trainer.seen[species]
-      if $Trainer.owned[species]
+    if $Trainer.seen?(species)
+      if $Trainer.owned?(species)
         pbCopyBitmap(self.contents,@pokeballOwn.bitmap,rect.x-6,rect.y+8)
       else
         pbCopyBitmap(self.contents,@pokeballSeen.bitmap,rect.x-6,rect.y+8)
@@ -45,7 +48,7 @@ class Window_Pokedex < Window_DrawableCommand
     else
       text = sprintf("%03d  ----------",indexNumber)
     end
-    pbDrawShadowText(self.contents,rect.x+36,rect.y+6,rect.width,rect.height,
+    pbDrawShadowText(self.contents,rect.x+36,rect.y+6 + 6,rect.width,rect.height,
        text,self.baseColor,self.shadowColor)
   end
 
@@ -69,8 +72,9 @@ class Window_Pokedex < Window_DrawableCommand
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokedexSearchSelectionSprite < SpriteWrapper
   attr_reader :index
   attr_accessor :cmds
@@ -207,8 +211,6 @@ class PokedexSearchSelectionSprite < SpriteWrapper
   end
 end
 
-
-
 #===============================================================================
 # Pokédex main screen
 #===============================================================================
@@ -236,8 +238,8 @@ class PokemonPokedex_Scene
     @viewport.z = 99999
     addBackgroundPlane(@sprites,"background","Pokedex/bg_list",@viewport)
 =begin
-# Suggestion for changing the background depending on region. You can change
-# the line above with the following:
+    # Suggestion for changing the background depending on region. You can change
+    # the line above with the following:
     if pbGetPokedexRegion==-1   # Using national Pokédex
       addBackgroundPlane(@sprites,"background","Pokedex/bg_national",@viewport)
     elsif pbGetPokedexRegion==0   # Using first regional Pokédex
@@ -280,7 +282,7 @@ class PokemonPokedex_Scene
   # return value of pbGetCurrentRegion, and thus will change according to the
   # current map's MapPosition metadata setting.
   def pbGetPokedexRegion
-    if USE_CURRENT_REGION_DEX
+    if Settings::USE_CURRENT_REGION_DEX
       region = pbGetCurrentRegion
       region = -1 if region>=$PokemonGlobal.pokedexUnlocked.length-1
       return region
@@ -300,45 +302,39 @@ class PokemonPokedex_Scene
     return index
   end
 
-  def pbCanAddForModeList?(mode,nationalSpecies)
+  def pbCanAddForModeList?(mode, species)
     case mode
-    when MODENUMERICAL
-      return true
     when MODEATOZ
-      return $Trainer.seen[nationalSpecies]
+      return $Trainer.seen?(species)
     when MODEHEAVIEST, MODELIGHTEST, MODETALLEST, MODESMALLEST
-      return $Trainer.owned[nationalSpecies]
+      return $Trainer.owned?(species)
     end
+    return true   # For MODENUMERICAL
   end
 
   def pbGetDexList
-    dexlist = []
-    speciesData = pbLoadSpeciesData
     region = pbGetPokedexRegion
     regionalSpecies = pbAllRegionalSpecies(region)
-    if regionalSpecies.length==1
-      # If no Regional Dex defined for the given region, use National Pokédex
-      for i in 1..PBSpecies.maxValue
-        regionalSpecies.push(i)
-      end
+    if !regionalSpecies || regionalSpecies.length == 0
+      # If no Regional Dex defined for the given region, use the National Pokédex
+      regionalSpecies = []
+      GameData::Species.each { |s| regionalSpecies.push(s.id) if s.form == 0 }
     end
-    for i in 1...regionalSpecies.length
-      nationalSpecies = regionalSpecies[i]
-      if pbCanAddForModeList?($PokemonGlobal.pokedexMode,nationalSpecies)
-        form = $Trainer.formlastseen[nationalSpecies][1] || 0
-        fspecies = pbGetFSpeciesFromForm(nationalSpecies,form)
-        color  = speciesData[fspecies][SpeciesColor] || 0
-        type1  = speciesData[fspecies][SpeciesType1] || 0
-        type2  = speciesData[fspecies][SpeciesType2] || type1
-        shape  = speciesData[fspecies][SpeciesShape] || 0
-        height = speciesData[fspecies][SpeciesHeight] || 1
-        weight = speciesData[fspecies][SpeciesWeight] || 1
-        shift = DEXES_WITH_OFFSETS.include?(region)
-        dexlist.push([nationalSpecies,PBSpecies.getName(nationalSpecies),
-           height,weight,i,shift,type1,type2,color,shape])
-      end
+    shift = Settings::DEXES_WITH_OFFSETS.include?(region)
+    ret = []
+    regionalSpecies.each_with_index do |species, i|
+      next if !species
+      next if !pbCanAddForModeList?($PokemonGlobal.pokedexMode, species)
+      species_data = GameData::Species.get(species)
+      color  = species_data.color
+      type1  = species_data.type1
+      type2  = species_data.type2 || type1
+      shape  = species_data.shape
+      height = species_data.height
+      weight = species_data.weight
+      ret.push([species, species_data.name, height, weight, i + 1, shift, type1, type2, color, shape])
     end
-    return dexlist
+    return ret
   end
 
   def pbRefreshDexList(index=0)
@@ -346,10 +342,11 @@ class PokemonPokedex_Scene
     case $PokemonGlobal.pokedexMode
     when MODENUMERICAL
       # Hide the Dex number 0 species if unseen
-      dexlist[0] = nil if dexlist[0][5] && !$Trainer.seen[dexlist[0][0]]
+      dexlist[0] = nil if dexlist[0][5] && !$Trainer.seen?(dexlist[0][0])
       # Remove unseen species from the end of the list
-      i = dexlist.length-1; loop do break unless i>=0
-        break if !dexlist[i] || $Trainer.seen[dexlist[i][0]]
+      i = dexlist.length-1
+      loop do break unless i>=0
+        break if !dexlist[i] || $Trainer.seen?(dexlist[i][0])
         dexlist[i] = nil
         i -= 1
       end
@@ -385,11 +382,11 @@ class PokemonPokedex_Scene
     base   = Color.new(88,88,80)
     shadow = Color.new(168,184,184)
     iconspecies = @sprites["pokedex"].species
-    iconspecies = 0 if !$Trainer.seen[iconspecies]
+    iconspecies = nil if !$Trainer.seen?(iconspecies)
     # Write various bits of text
     dexname = _INTL("Pokédex")
     if $PokemonGlobal.pokedexUnlocked.length>1
-      thisdex = pbDexNames[pbGetSavePositionIndex]
+      thisdex = Settings.pokedex_names[pbGetSavePositionIndex]
       if thisdex!=nil
         dexname = (thisdex.is_a?(Array)) ? thisdex[0] : thisdex
       end
@@ -397,15 +394,15 @@ class PokemonPokedex_Scene
     textpos = [
        [dexname,Graphics.width/2,2,2,Color.new(248,248,248),Color.new(0,0,0)]
     ]
-    textpos.push([PBSpecies.getName(iconspecies),112,52,2,base,shadow]) if iconspecies>0
+    textpos.push([GameData::Species.get(iconspecies).name,112,52,2,base,shadow]) if iconspecies
     if @searchResults
       textpos.push([_INTL("Search results"),112,308,2,base,shadow])
       textpos.push([@dexlist.length.to_s,112,340,2,base,shadow])
     else
       textpos.push([_INTL("Seen:"),42,308,0,base,shadow])
-      textpos.push([$Trainer.pokedexSeen(pbGetPokedexRegion).to_s,182,308,1,base,shadow])
+      textpos.push([$Trainer.seen_count(pbGetPokedexRegion).to_s,182,308,1,base,shadow])
       textpos.push([_INTL("Owned:"),42,340,0,base,shadow])
-      textpos.push([$Trainer.pokedexOwned(pbGetPokedexRegion).to_s,182,340,1,base,shadow])
+      textpos.push([$Trainer.owned_count(pbGetPokedexRegion).to_s,182,340,1,base,shadow])
     end
     # Draw all text
     pbDrawTextPositions(overlay,textpos)
@@ -466,13 +463,15 @@ class PokemonPokedex_Scene
     textpos.push([(params[8]<0) ? "----" : @colorCommands[params[8]],444,118,2,base,shadow,1])
     # Draw type icons
     if params[2]>=0
-      typerect = Rect.new(0,@typeCommands[params[2]]*32,96,32)
+      type_number = @typeCommands[params[2]].id_number
+      typerect = Rect.new(0,type_number*32,96,32)
       overlay.blt(128,168,@typebitmap.bitmap,typerect)
     else
       textpos.push(["----",176,170,2,base,shadow,1])
     end
     if params[3]>=0
-      typerect = Rect.new(0,@typeCommands[params[3]]*32,96,32)
+      type_number = @typeCommands[params[3]].id_number
+      typerect = Rect.new(0,type_number*32,96,32)
       overlay.blt(256,168,@typebitmap.bitmap,typerect)
     else
       textpos.push(["----",304,170,2,base,shadow,1])
@@ -562,7 +561,8 @@ class PokemonPokedex_Scene
         if !sel[i] || sel[i]<0
           textpos.push(["----",298+128*i,58,2,base,shadow,1])
         else
-          typerect = Rect.new(0,@typeCommands[sel[i]]*32,96,32)
+          type_number = @typeCommands[sel[i]].id_number
+          typerect = Rect.new(0,type_number*32,96,32)
           overlay.blt(250+128*i,58,@typebitmap.bitmap,typerect)
         end
       end
@@ -658,7 +658,7 @@ class PokemonPokedex_Scene
     when 2 # Type
       typerect = Rect.new(0,0,96,32)
       for i in 0...cmds.length
-        typerect.y = @typeCommands[i]*32
+        typerect.y = @typeCommands[i].id_number*32
         overlay.blt(xstart+14+(i%cols)*xgap,ystart+6+(i/cols).floor*ygap,@typebitmap.bitmap,typerect)
       end
       textpos.push(["----",
@@ -675,9 +675,11 @@ class PokemonPokedex_Scene
   end
 
   def setIconBitmap(species)
-    gender = ($Trainer.formlastseen[species][0] rescue 0)
-    form   = ($Trainer.formlastseen[species][1] rescue 0)
-    @sprites["icon"].setSpeciesBitmap(species,(gender==1),form)
+    $Trainer.last_seen_forms = {} if !$Trainer.last_seen_forms
+    $Trainer.last_seen_forms[species] = [] if !$Trainer.last_seen_forms[species]
+    gender = $Trainer.last_seen_forms[species][0] || 0
+    form   = $Trainer.last_seen_forms[species][1] || 0
+    @sprites["icon"].setSpeciesBitmap(species, gender, form)
   end
 
   def pbSearchDexList(params)
@@ -687,26 +689,26 @@ class PokemonPokedex_Scene
     if params[1]>=0
       scanNameCommand = @nameCommands[params[1]].scan(/./)
       dexlist = dexlist.find_all { |item|
-        next false if !$Trainer.seen[item[0]]
+        next false if !$Trainer.seen?(item[0])
         firstChar = item[1][0,1]
         next scanNameCommand.any? { |v| v==firstChar }
       }
     end
     # Filter by type
     if params[2]>=0 || params[3]>=0
-      stype1 = (params[2]>=0) ? @typeCommands[params[2]] : -1
-      stype2 = (params[3]>=0) ? @typeCommands[params[3]] : -1
+      stype1 = (params[2]>=0) ? @typeCommands[params[2]].id : nil
+      stype2 = (params[3]>=0) ? @typeCommands[params[3]].id : nil
       dexlist = dexlist.find_all { |item|
-        next false if !$Trainer.owned[item[0]]
+        next false if !$Trainer.owned?(item[0])
         type1 = item[6]
         type2 = item[7]
-        if stype1>=0 && stype2>=0
+        if stype1 && stype2
           # Find species that match both types
           next (type1==stype1 && type2==stype2) || (type1==stype2 && type2==stype1)
-        elsif stype1>=0
+        elsif stype1
           # Find species that match first type entered
           next type1==stype1 || type2==stype1
-        elsif stype2>=0
+        elsif stype2
           # Find species that match second type entered
           next type1==stype2 || type2==stype2
         else
@@ -719,7 +721,7 @@ class PokemonPokedex_Scene
       minh = (params[4]<0) ? 0 : (params[4]>=@heightCommands.length) ? 999 : @heightCommands[params[4]]
       maxh = (params[5]<0) ? 999 : (params[5]>=@heightCommands.length) ? 0 : @heightCommands[params[5]]
       dexlist = dexlist.find_all { |item|
-        next false if !$Trainer.owned[item[0]]
+        next false if !$Trainer.owned?(item[0])
         height = item[2]
         next height>=minh && height<=maxh
       }
@@ -729,7 +731,7 @@ class PokemonPokedex_Scene
       minw = (params[6]<0) ? 0 : (params[6]>=@weightCommands.length) ? 9999 : @weightCommands[params[6]]
       maxw = (params[7]<0) ? 9999 : (params[7]>=@weightCommands.length) ? 0 : @weightCommands[params[7]]
       dexlist = dexlist.find_all { |item|
-        next false if !$Trainer.owned[item[0]]
+        next false if !$Trainer.owned?(item[0])
         weight = item[3]
         next weight>=minw && weight<=maxw
       }
@@ -743,7 +745,7 @@ class PokemonPokedex_Scene
       end
       scolor = colorCommands[params[8]]
       dexlist = dexlist.find_all { |item|
-        next false if !$Trainer.seen[item[0]]
+        next false if !$Trainer.seen?(item[0])
         color = item[8]
         next color==scolor
       }
@@ -752,20 +754,20 @@ class PokemonPokedex_Scene
     if params[9]>=0
       sshape = @shapeCommands[params[9]]+1
       dexlist = dexlist.find_all { |item|
-        next false if !$Trainer.seen[item[0]]
+        next false if !$Trainer.seen?(item[0])
         shape = item[9]
         next shape==sshape
       }
     end
     # Remove all unseen species from the results
-    dexlist = dexlist.find_all { |item| next $Trainer.seen[item[0]] }
+    dexlist = dexlist.find_all { |item| next $Trainer.seen?(item[0]) }
     case $PokemonGlobal.pokedexMode
-    when MODENUMERICAL; dexlist.sort! { |a,b| a[4]<=>b[4] }
-    when MODEATOZ;      dexlist.sort! { |a,b| a[1]<=>b[1] }
-    when MODEHEAVIEST;  dexlist.sort! { |a,b| b[3]<=>a[3] }
-    when MODELIGHTEST;  dexlist.sort! { |a,b| a[3]<=>b[3] }
-    when MODETALLEST;   dexlist.sort! { |a,b| b[2]<=>a[2] }
-    when MODESMALLEST;  dexlist.sort! { |a,b| a[2]<=>b[2] }
+    when MODENUMERICAL then dexlist.sort! { |a,b| a[4]<=>b[4] }
+    when MODEATOZ      then dexlist.sort! { |a,b| a[1]<=>b[1] }
+    when MODEHEAVIEST  then dexlist.sort! { |a,b| b[3]<=>a[3] }
+    when MODELIGHTEST  then dexlist.sort! { |a,b| a[3]<=>b[3] }
+    when MODETALLEST   then dexlist.sort! { |a,b| b[2]<=>a[2] }
+    when MODESMALLEST  then dexlist.sort! { |a,b| a[2]<=>b[2] }
     end
     return dexlist
   end
@@ -790,8 +792,8 @@ class PokemonPokedex_Scene
   def pbDexEntry(index)
     oldsprites = pbFadeOutAndHide(@sprites)
     region = -1
-    if !USE_CURRENT_REGION_DEX
-      dexnames = pbDexNames
+    if !Settings::USE_CURRENT_REGION_DEX
+      dexnames = Settings.pokedex_names
       if dexnames[pbGetSavePositionIndex].is_a?(Array)
         region = dexnames[pbGetSavePositionIndex][1]
       end
@@ -822,17 +824,17 @@ class PokemonPokedex_Scene
     ret = nil
     # Set background
     case mode
-    when 0;   @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_order")
-    when 1;   @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_name")
+    when 0    then @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_order")
+    when 1    then @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_name")
     when 2
       if PBTypes.regularTypesCount==18
         @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_type_18")
       else
         @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_type")
       end
-    when 3,4; @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_size")
-    when 5;   @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_color")
-    when 6;   @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_shape")
+    when 3, 4 then @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_size")
+    when 5    then @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_color")
+    when 6    then @sprites["searchbg"].setBitmap("Graphics/Pictures/Pokedex/bg_search_shape")
     end
     selindex = selitems.clone
     index     = selindex[0]
@@ -1000,9 +1002,8 @@ class PokemonPokedex_Scene
                     _INTL("U"),_INTL("V"),_INTL("W"),_INTL("X"),_INTL("Y"),
                     _INTL("Z")]
     @typeCommands = []
-    for i in 0..PBTypes.maxValue
-      @typeCommands.push(i) if !PBTypes.isPseudoType?(i)
-    end
+    GameData::Type.each { |t| @typeCommands.push(t) if !t.pseudo_type }
+    @typeCommands.sort! { |a, b| a.id_number <=> b.id_number }
     @heightCommands = [1,2,3,4,5,6,7,8,9,10,
                        11,12,13,14,15,16,17,18,19,20,
                        21,22,23,24,25,30,35,40,45,50,
@@ -1165,7 +1166,7 @@ class PokemonPokedex_Scene
             break
           end
         elsif Input.trigger?(Input::C)
-          if $Trainer.seen[@sprites["pokedex"].species]
+          if $Trainer.seen?(@sprites["pokedex"].species)
             pbPlayDecisionSE
             pbDexEntry(@sprites["pokedex"].index)
           end
@@ -1175,8 +1176,9 @@ class PokemonPokedex_Scene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonPokedexScreen
   def initialize(scene)
     @scene = scene

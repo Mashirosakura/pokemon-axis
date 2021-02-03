@@ -13,7 +13,7 @@ class BugContestState
      _INTL("Picnicker Cindy"),
      _INTL("Youngster Samuel")
   ]
-  TimerSeconds = BUG_CONTEST_TIME
+  TimerSeconds = Settings::BUG_CONTEST_TIME
 
   def initialize
     clear
@@ -106,16 +106,16 @@ class BugContestState
       end
     end
     enctype=EncounterTypes::BugContest
-    if !$PokemonEncounters.pbMapHasEncounter?(@contestMap,enctype)
+    if !$PokemonEncounters.map_has_encounter_type?(@contestMap, enctype)
       enctype=EncounterTypes::Land
     end
     for cont in @contestants
-      enc=$PokemonEncounters.pbMapEncounter(@contestMap,enctype)
+      enc=$PokemonEncounters.choose_wild_pokemon_for_map(@contestMap,enctype)
       if !enc
         raise _INTL("No encounters for map {1}, so can't judge contest",@contestMap)
       end
-      pokemon=pbNewPkmn(enc[0],enc[1])
-      pokemon.hp=1+rand(pokemon.totalhp-1)
+      pokemon=Pokemon.new(enc[0],enc[1])
+      pokemon.hp = rand(1..pokemon.totalhp - 1)
       score=pbBugContestScore(pokemon)
       judgearray.push([cont,pokemon.species,score])
     end
@@ -135,16 +135,12 @@ class BugContestState
     else
       $game_variables[1]=ContestantNames[cont]
     end
-    $game_variables[2]=PBSpecies.getName(@places[place][1])
+    $game_variables[2]=GameData::Species.get(@places[place][1]).name
     $game_variables[3]=@places[place][2]
   end
 
   def pbClearIfEnded
-    if !@inProgress
-      if !(@start && @start[0]==$game_map.map_id)
-        clear
-      end
-    end
+    clear if !@inProgress && (!@start || @start[0] != $game_map.map_id)
   end
 
   def pbStartJudging
@@ -263,18 +259,17 @@ end
 
 # Returns a score for this Pokemon in the Bug Catching Contest.
 # Not exactly the HGSS calculation, but it should be decent enough.
-def pbBugContestScore(pokemon)
-  levelscore=pokemon.level*4
-  ivscore=0
-  for i in pokemon.iv; ivscore+=i; end
-  ivscore=(ivscore*100/186).floor
-  hpscore=(100*pokemon.hp/pokemon.totalhp).floor
-  rareness = pbGetSpeciesData(pokemon.species,pokemon.form,SpeciesRareness)
-  rarescore=60
-  rarescore+=20 if rareness<=120
-  rarescore+=20 if rareness<=60
-  score=levelscore+ivscore+hpscore+rarescore
-  return score
+def pbBugContestScore(pkmn)
+  levelscore = pkmn.level * 4
+  ivscore = 0
+  pkmn.iv.each { |iv| ivscore += iv.to_f / Pokemon::IV_STAT_LIMIT }
+  ivscore = (ivscore * 100).floor
+  hpscore = (100.0 * pkmn.hp / pkmn.totalhp).floor
+  catch_rate = pkmn.species_data.catch_rate
+  rarescore = 60
+  rarescore += 20 if catch_rate <= 120
+  rarescore += 20 if catch_rate <= 60
+  return levelscore + ivscore + hpscore + rarescore
 end
 
 def pbBugContestState

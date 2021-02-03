@@ -18,43 +18,23 @@ class PBPokemon
   attr_accessor :ev
 
   def initialize(species,item,nature,move1,move2,move3,move4,ev)
-    @species=species
-    @item=item ? item : 0
-    @nature=nature
-    @move1=move1 ? move1 : 0
-    @move2=move2 ? move2 : 0
-    @move3=move3 ? move3 : 0
-    @move4=move4 ? move4 : 0
-    @ev=ev
+    @species = species
+    itm = GameData::Item.try_get(item)
+    @item = itm ? itm.id : nil
+    @nature = nature
+    @move1 = move1 ? move1 : 0
+    @move2 = move2 ? move2 : 0
+    @move3 = move3 ? move3 : 0
+    @move4 = move4 ? move4 : 0
+    @ev = ev
   end
-
-=begin
-  def _dump(depth)
-    return [@species,@item,@nature,@move1,@move2,
-       @move3,@move4,@ev].pack("vvCvvvvC")
-  end
-
-  def self._load(str)
-    data=str.unpack("vvCvvvvC")
-    return self.new(
-       data[0],data[1],data[2],data[3],
-       data[4],data[5],data[6],data[7]
-    )
-  end
-=end
 
   def self.fromInspected(str)
     insp=str.gsub(/^\s+/,"").gsub(/\s+$/,"")
     pieces=insp.split(/\s*;\s*/)
-    species=1
-    if (PBSpecies.const_defined?(pieces[0]) rescue false)
-      species=PBSpecies.const_get(pieces[0])
-    end
-    item=0
-    if (PBItems.const_defined?(pieces[1]) rescue false)
-      item=PBItems.const_get(pieces[1])
-    end
-    nature=PBNatures.const_get(pieces[2])
+    species = (GameData::Species.exists?(pieces[0])) ? GameData::Species.get(pieces[0]).id : nil
+    item = (GameData::Item.exists?(pieces[1])) ? GameData::Item.get(pieces[1]).id : nil
+    nature = (GameData::Nature.exists?(pieces[2])) ? GameData::Nature.get(pieces[2]).id : nil
     ev=pieces[3].split(/\s*,\s*/)
     evvalue=0
     for i in 0...6
@@ -70,13 +50,11 @@ class PBPokemon
     moves=pieces[4].split(/\s*,\s*/)
     moveid=[]
     for i in 0...4
-      if (PBMoves.const_defined?(moves[i]) rescue false)
-        moveid.push(PBMoves.const_get(moves[i]))
-      end
+      move_data = GameData::Move.try_get(moves[i])
+      moveid.push(move_data.id) if move_data
     end
-    moveid=[1] if moveid.length==0
-    return self.new(species,item,nature,
-       moveid[0],(moveid[1]||0),(moveid[2]||0),(moveid[3]||0),evvalue)
+    moveid=[GameData::Move.get(1)] if moveid.length==0
+    return self.new(species, item, nature, moveid[0], moveid[1], moveid[2], moveid[3], evvalue)
   end
 
   def self.fromPokemon(pokemon)
@@ -87,31 +65,12 @@ class PBPokemon
     evvalue|=0x08 if pokemon.ev[3]>60
     evvalue|=0x10 if pokemon.ev[4]>60
     evvalue|=0x20 if pokemon.ev[5]>60
-    return self.new(pokemon.species,pokemon.item,pokemon.nature,
-       pokemon.moves[0].id,pokemon.moves[1].id,pokemon.moves[2].id,
-       pokemon.moves[3].id,evvalue)
-  end
-
-  def inspect
-    c1=getConstantName(PBSpecies,@species)
-    c2=(@item==0) ? "" : getConstantName(PBItems,@item)
-    c3=getConstantName(PBNatures,@nature)
-    evlist=""
-    for i in 0...@ev
-      if ((@ev&(1<<i))!=0)
-        evlist+="," if evlist.length>0
-        evlist+=["HP","ATK","DEF","SPD","SA","SD"][i]
-      end
-    end
-    c4=(@move1==0) ? "" : getConstantName(PBMoves,@move1)
-    c5=(@move2==0) ? "" : getConstantName(PBMoves,@move2)
-    c6=(@move3==0) ? "" : getConstantName(PBMoves,@move3)
-    c7=(@move4==0) ? "" : getConstantName(PBMoves,@move4)
-    return "#{c1};#{c2};#{c3};#{evlist};#{c4},#{c5},#{c6},#{c7}"
-  end
-
-  def tocompact
-    return "#{species},#{item},#{nature},#{move1},#{move2},#{move3},#{move4},#{ev}"
+    mov1 = (pokemon.moves[0]) ? pokemon.moves[0].id : nil
+    mov2 = (pokemon.moves[1]) ? pokemon.moves[1].id : nil
+    mov3 = (pokemon.moves[2]) ? pokemon.moves[2].id : nil
+    mov4 = (pokemon.moves[3]) ? pokemon.moves[3].id : nil
+    return self.new(pokemon.species,pokemon.item_id,pokemon.nature,
+       mov1,mov2,mov3,mov4,evvalue)
   end
 
   def self.constFromStr(mod,str)
@@ -133,13 +92,13 @@ class PBPokemon
 
   def self.fromstring(str)
     s=str.split(/\s*,\s*/)
-    species=self.constFromStr(PBSpecies,s[1])
-    item=self.constFromStr(PBItems,s[2])
-    nature=self.constFromStr(PBNatures,s[3])
-    move1=self.constFromStr(PBMoves,s[4])
-    move2=(s.length>=12) ? self.constFromStr(PBMoves,s[5]) : 0
-    move3=(s.length>=13) ? self.constFromStr(PBMoves,s[6]) : 0
-    move4=(s.length>=14) ? self.constFromStr(PBMoves,s[7]) : 0
+    species=GameData::Species.get(s[1]).id
+    item=s[2].to_sym
+    nature=GameData::Nature.get(s[3]).id
+    move1=GameData::Move.get(s[4]).id
+    move2=(s.length>=12) ? GameData::Move.get(s[5]).id : nil
+    move3=(s.length>=13) ? GameData::Move.get(s[6]).id : nil
+    move4=(s.length>=14) ? GameData::Move.get(s[7]).id : nil
     ev=0
     slen=s.length-6
     ev|=0x01 if s[slen].to_i>0
@@ -151,31 +110,65 @@ class PBPokemon
     return self.new(species,item,nature,move1,move2,move3,move4,ev)
   end
 
-  def convertMove(move)
-    if isConst?(move,PBMoves,:RETURN) && hasConst?(PBMoves,:FRUSTRATION)
-      move=getConst(PBMoves,:FRUSTRATION)
+=begin
+  def _dump(depth)
+    return [@species,@item,@nature,@move1,@move2,
+       @move3,@move4,@ev].pack("vvCvvvvC")
+  end
+
+  def self._load(str)
+    data=str.unpack("vvCvvvvC")
+    return self.new(
+       data[0],data[1],data[2],data[3],
+       data[4],data[5],data[6],data[7]
+    )
+  end
+=end
+
+  def inspect
+    c1=GameData::Species.get(@species).id.to_s
+    c2=(@item) ? GameData::Item.get(@item).id.to_s : ""
+    c3=(@nature) ? GameData::Nature.get(@nature).id.to_s : ""
+    evlist=""
+    for i in 0...@ev
+      if ((@ev&(1<<i))!=0)
+        evlist+="," if evlist.length>0
+        evlist+=["HP","ATK","DEF","SPD","SA","SD"][i]
+      end
     end
+    c4=(@move1) ? GameData::Move.get(@move1).id_to_s : ""
+    c5=(@move2) ? GameData::Move.get(@move2).id_to_s : ""
+    c6=(@move3) ? GameData::Move.get(@move3).id_to_s : ""
+    c7=(@move4) ? GameData::Move.get(@move4).id_to_s : ""
+    return "#{c1};#{c2};#{c3};#{evlist};#{c4},#{c5},#{c6},#{c7}"
+  end
+
+  def tocompact
+    return "#{species},#{item},#{nature},#{move1},#{move2},#{move3},#{move4},#{ev}"
+  end
+
+  def convertMove(move)
+    move = :FRUSTRATION if move == :RETURN && GameData::Move.exists?(:FRUSTRATION)
     return move
   end
 
   def createPokemon(level,iv,trainer)
-    pokemon=pbNewPkmn(@species,level,trainer,false)
-    pokemon.setItem(@item)
-    pokemon.personalID=rand(65536)
-    pokemon.personalID|=rand(65536)<<8
-    pokemon.personalID-=pokemon.personalID%25
-    pokemon.personalID+=nature
-    pokemon.personalID&=0xFFFFFFFF
+    pokemon=Pokemon.new(@species,level,trainer,false)
+    pokemon.item = @item
+    pokemon.personalID = rand(2**16) | rand(2**16) << 16
+    pokemon.personalID -= pokemon.personalID % 25
+    pokemon.personalID += nature
+    pokemon.personalID &= 0xFFFFFFFF
     pokemon.happiness=0
-    pokemon.moves[0]=PBMove.new(self.convertMove(@move1))
-    pokemon.moves[1]=PBMove.new(self.convertMove(@move2))
-    pokemon.moves[2]=PBMove.new(self.convertMove(@move3))
-    pokemon.moves[3]=PBMove.new(self.convertMove(@move4))
+    pokemon.moves[0] = Pokemon::Move.new(self.convertMove(@move1))
+    pokemon.moves[1] = Pokemon::Move.new(self.convertMove(@move2))
+    pokemon.moves[2] = Pokemon::Move.new(self.convertMove(@move3))
+    pokemon.moves[3] = Pokemon::Move.new(self.convertMove(@move4))
     evcount=0
     for i in 0...6
       evcount+=1 if ((@ev&(1<<i))!=0)
     end
-    evperstat=(evcount==0) ? 0 : PokeBattle_Pokemon::EV_LIMIT/evcount
+    evperstat=(evcount==0) ? 0 : Pokemon::EV_LIMIT/evcount
     for i in 0...6
       pokemon.iv[i]=iv
       pokemon.ev[i]=((@ev&(1<<i))!=0) ? evperstat : 0
@@ -696,7 +689,7 @@ end
 def pbBattleChallengeGraphic(event)
   nextTrainer=pbBattleChallenge.nextTrainer
   bttrainers=pbGetBTTrainers(pbBattleChallenge.currentChallenge)
-  filename=pbTrainerCharNameFile((bttrainers[nextTrainer][0] rescue 0))
+  filename=GameData::TrainerType.charset_filename_brief((bttrainers[nextTrainer][0] rescue 0))
   begin
     bitmap=AnimatedBitmap.new("Graphics/Characters/"+filename)
     bitmap.dispose
@@ -746,7 +739,7 @@ class BattleFactoryData
     @trainerid=@bcdata.nextTrainer
     bttrainers=pbGetBTTrainers(@bcdata.currentChallenge)
     trainerdata=bttrainers[@trainerid]
-    @opponent=PokeBattle_Trainer.new(
+    @opponent=NPCTrainer.new(
        pbGetMessageFromHash(MessageTypes::TrainerNames,trainerdata[1]),
        trainerdata[0])
     opponentPkmn=pbBattleFactoryPokemon(1,@bcdata.wins,@bcdata.swaps,@rentals)
@@ -776,7 +769,7 @@ class BattleFactoryData
     trainerid=@bcdata.nextTrainer
     bttrainers=pbGetBTTrainers(@bcdata.currentChallenge)
     trainerdata=bttrainers[trainerid]
-    @opponent=PokeBattle_Trainer.new(
+    @opponent=NPCTrainer.new(
        pbGetMessageFromHash(MessageTypes::TrainerNames,trainerdata[1]),
        trainerdata[0])
     opponentPkmn=pbBattleFactoryPokemon(
@@ -875,7 +868,7 @@ def pbBattleFactoryPokemon(rule,numwins,numswaps,_rentals)
   party=[]
   loop do
     party.clear
-    while party.length<6
+    while party.length < Settings::MAX_PARTY_SIZE
       rnd=pokemonNumbers[0]+rand(pokemonNumbers[1]-pokemonNumbers[0]+1)
       rndpoke=btpokemon[rnd]
       indvalue=(party.length<ivgroups[0]) ? ivs[0] : ivs[1]
@@ -889,7 +882,7 @@ end
 def pbGenerateBattleTrainer(trainerid,rule)
   bttrainers=pbGetBTTrainers(pbBattleChallenge.currentChallenge)
   trainerdata=bttrainers[trainerid]
-  opponent=PokeBattle_Trainer.new(
+  opponent=NPCTrainer.new(
      pbGetMessageFromHash(MessageTypes::TrainerNames,trainerdata[1]),
      trainerdata[0])
   btpokemon=pbGetBTPokemon(pbBattleChallenge.currentChallenge)
@@ -935,12 +928,12 @@ def pbOrganizedBattleEx(opponent,challengedata,endspeech,endspeechwin)
     $PokemonTemp.lastbattle = nil
     return true
   end
-  pbHealAll
+  $Trainer.heal_party
   # Remember original data, to be restored after battle
   challengedata = PokemonChallengeRules.new if !challengedata
   oldlevels = challengedata.adjustLevels($Trainer.party,opponent.party)
-  olditems  = $Trainer.party.transform { |p| p.item }
-  olditems2 = opponent.party.transform { |p| p.item }
+  olditems  = $Trainer.party.transform { |p| p.item_id }
+  olditems2 = opponent.party.transform { |p| p.item_id }
   # Create the battle scene (the visual side of it)
   scene = pbNewBattleScene
   # Create the battle class (the mechanics side of it)
@@ -965,13 +958,13 @@ def pbOrganizedBattleEx(opponent,challengedata,endspeech,endspeechwin)
     pkmn.heal
     pkmn.makeUnmega
     pkmn.makeUnprimal
-    pkmn.setItem(olditems[i])
+    pkmn.item = olditems[i]
   end
   opponent.party.each_with_index do |pkmn,i|
     pkmn.heal
     pkmn.makeUnmega
     pkmn.makeUnprimal
-    pkmn.setItem(olditems2[i])
+    pkmn.item = olditems2[i]
   end
   # Save the record of the battle
   $PokemonTemp.lastbattle = nil

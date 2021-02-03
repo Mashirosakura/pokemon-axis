@@ -8,7 +8,7 @@ class PokeBattle_Battle
     return if !@internalBattle || !@expGain
     # Go through each battler in turn to find the Pokémon that participated in
     # battle against it, and award those Pokémon Exp/EVs
-    expAll = (hasConst?(PBItems,:EXPALL) && $PokemonBag.pbHasItem?(:EXPALL))
+    expAll = (GameData::Item.exists?(:EXPALL) && $PokemonBag.pbHasItem?(:EXPALL))
     p1 = pbParty(0)
     @battlers.each do |b|
       next unless b && b.opposes?   # Can only gain Exp from fainted foes
@@ -25,8 +25,7 @@ class PokeBattle_Battle
       if !expAll
         eachInTeam(0,0) do |pkmn,i|
           next if !pkmn.able?
-          next if !pkmn.hasItem?(:EXPSHARE) &&
-                  !isConst?(@initialItems[0][i],PBItems,:EXPSHARE)
+          next if !pkmn.hasItem?(:EXPSHARE) && GameData::Item.try_get(@initialItems[0][i]) != :EXPSHARE
           expShare.push(i)
         end
       end
@@ -72,25 +71,27 @@ class PokeBattle_Battle
       evYield.collect! { |a| a*2 }
     end
     # Gain EVs for each stat in turn
-    PBStats.eachStat do |s|
-      evGain = evYield[s]
-      # Can't exceed overall limit
-      if evTotal+evGain>PokeBattle_Pokemon::EV_LIMIT
-        evGain = PokeBattle_Pokemon::EV_LIMIT-evTotal
+    if pkmn.shadowPokemon? && pkmn.saved_ev
+      PBStats.eachStat { |s| evTotal += pkmn.saved_ev[s] }
+      PBStats.eachStat do |s|
+        evGain = evYield[s].clamp(0, Pokemon::EV_STAT_LIMIT - pkmn.ev[s] - pkmn.saved_ev[s])
+        evGain = evGain.clamp(0, Pokemon::EV_LIMIT - evTotal)
+        pkmn.saved_ev[s] += evGain
+        evTotal += evGain
       end
-      # Can't exceed individual stat limit
-      if pkmn.ev[s]+evGain>PokeBattle_Pokemon::EV_STAT_LIMIT
-        evGain = PokeBattle_Pokemon::EV_STAT_LIMIT-pkmn.ev[s]
+    else
+      PBStats.eachStat do |s|
+        evGain = evYield[s].clamp(0, Pokemon::EV_STAT_LIMIT - pkmn.ev[s])
+        evGain = evGain.clamp(0, Pokemon::EV_LIMIT - evTotal)
+        pkmn.ev[s] += evGain
+        evTotal += evGain
       end
-      # Add EV gain
-      pkmn.ev[s] += evGain
-      evTotal += evGain
     end
   end
 
   def pbGainExpOne(idxParty,defeatedBattler,numPartic,expShare,expAll,showMessages=true)
     pkmn = pbParty(0)[idxParty]   # The Pokémon gaining EVs from defeatedBattler
-    growthRate = pkmn.growthrate
+    growthRate = pkmn.growth_rate
     # Don't bother calculating if gainer is already at max Exp
     if pkmn.exp>=PBExperience.pbGetMaxExperience(growthRate)
       pkmn.calcStats   # To ensure new EVs still have an effect
@@ -101,18 +102,18 @@ class PokeBattle_Battle
     level = defeatedBattler.level
     # Main Exp calculation
     exp = 0
-    a = level*defeatedBattler.pokemon.baseExp
+    a = level*defeatedBattler.pokemon.base_exp
     if expShare.length>0 && (isPartic || hasExpShare)
       if numPartic==0   # No participants, all Exp goes to Exp Share holders
-        exp = a/(SPLIT_EXP_BETWEEN_GAINERS ? expShare.length : 1)
-      elsif SPLIT_EXP_BETWEEN_GAINERS   # Gain from participating and/or Exp Share
+        exp = a / (Settings::SPLIT_EXP_BETWEEN_GAINERS ? expShare.length : 1)
+      elsif Settings::SPLIT_EXP_BETWEEN_GAINERS   # Gain from participating and/or Exp Share
         exp = a/(2*numPartic) if isPartic
         exp += a/(2*expShare.length) if hasExpShare
       else   # Gain from participating and/or Exp Share (Exp not split)
         exp = (isPartic) ? a : a/2
       end
     elsif isPartic   # Participated in battle, no Exp Shares held by anyone
-      exp = a/(SPLIT_EXP_BETWEEN_GAINERS ? numPartic : 1)
+      exp = a / (Settings::SPLIT_EXP_BETWEEN_GAINERS ? numPartic : 1)
     elsif expAll   # Didn't participate in battle, gaining Exp due to Exp All
       # NOTE: Exp All works like the Exp Share from Gen 6+, not like the Exp All
       #       from Gen 1, i.e. Exp isn't split between all Pokémon gaining it.
@@ -122,7 +123,7 @@ class PokeBattle_Battle
     # Pokémon gain more Exp from trainer battles
     exp = (exp*1.5).floor if trainerBattle?
     # Scale the gained Exp based on the gainer's level (or not)
-    if SCALED_EXP_FORMULA
+    if Settings::SCALED_EXP_FORMULA
       exp /= 5
       levelAdjust = (2*level+10.0)/(pkmn.level+level+10.0)
       levelAdjust = levelAdjust**5
@@ -134,10 +135,10 @@ class PokeBattle_Battle
       exp /= 7
     end
     # Foreign Pokémon gain more Exp
-    isOutsider = (pkmn.trainerID!=pbPlayer.id ||
-                 (pkmn.language!=0 && pkmn.language!=pbPlayer.language))
+    isOutsider = (pkmn.owner.id != pbPlayer.id ||
+                 (pkmn.owner.language != 0 && pkmn.owner.language != pbPlayer.language))
     if isOutsider
-      if pkmn.language!=0 && pkmn.language!=pbPlayer.language
+      if pkmn.owner.language != 0 && pkmn.owner.language != pbPlayer.language
         exp = (exp*1.7).floor
       else
         exp = (exp*1.5).floor
@@ -224,13 +225,13 @@ class PokeBattle_Battle
     return if !pkmn
     pkmnName = pkmn.name
     battler = pbFindBattler(idxParty)
-    moveName = PBMoves.getName(newMove)
+    moveName = GameData::Move.get(newMove).name
     # Find a space for the new move in pkmn's moveset and learn it
-    pkmn.moves.each_with_index do |m,i|
-      return if m.id==newMove   # Already knows the new move
-      next if m.id!=0           # Not a blank move slot
-      pkmn.moves[i] = PBMove.new(newMove)
-      battler.moves[i] = PokeBattle_Move.pbFromPBMove(self,pkmn.moves[i]) if battler
+    for i in 0...Pokemon::MAX_MOVES
+      m = pkmn.moves[i]
+      return if m && m.id==newMove   # Already knows the new move
+      pkmn.moves[i] = Pokemon::Move.new(newMove)
+      battler.moves[i] = PokeBattle_Move.from_pokemon_move(self, pkmn.moves[i]) if battler
       pbDisplay(_INTL("{1} learned {2}!",pkmnName,moveName)) { pbSEPlay("Pkmn move learnt") }
       battler.pbCheckFormOnMovesetChange if battler
       return
@@ -242,9 +243,9 @@ class PokeBattle_Battle
         pbDisplayPaused(_INTL("Which move should be forgotten?"))
         forgetMove = @scene.pbForgetMove(pkmn,newMove)
         if forgetMove>=0
-          oldMoveName = PBMoves.getName(pkmn.moves[forgetMove].id)
-          pkmn.moves[forgetMove] = PBMove.new(newMove)   # Replaces current/total PP
-          battler.moves[forgetMove] = PokeBattle_Move.pbFromPBMove(self,pkmn.moves[forgetMove]) if battler
+          oldMoveName = pkmn.moves[forgetMove].name
+          pkmn.moves[forgetMove] = Pokemon::Move.new(newMove)   # Replaces current/total PP
+          battler.moves[forgetMove] = PokeBattle_Move.from_pokemon_move(self, pkmn.moves[forgetMove]) if battler
           pbDisplayPaused(_INTL("1, 2, and... ... ... Ta-da!"))
           pbDisplayPaused(_INTL("{1} forgot how to use {2}. And...",pkmnName,oldMoveName))
           pbDisplay(_INTL("{1} learned {2}!",pkmnName,moveName)) { pbSEPlay("Pkmn move learnt") }

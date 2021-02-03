@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class PokemonPauseMenu_Scene
   def pbStartScene
     @viewport = Viewport.new(0,0,Graphics.width,Graphics.height)
@@ -78,8 +81,9 @@ class PokemonPauseMenu_Scene
   def pbRefresh; end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonPauseMenu
   def initialize(scene)
     @scene = scene
@@ -118,17 +122,17 @@ class PokemonPauseMenu
     commands[cmdPokegear = commands.length] = _INTL("Pokégear") if $Trainer.pokegear
     commands[cmdTrainer = commands.length]  = $Trainer.name
     if pbInSafari?
-      if SAFARI_STEPS<=0
+      if Settings::SAFARI_STEPS <= 0
         @scene.pbShowInfo(_INTL("Balls: {1}",pbSafariState.ballcount))
       else
         @scene.pbShowInfo(_INTL("Steps: {1}/{2}\nBalls: {3}",
-           pbSafariState.steps,SAFARI_STEPS,pbSafariState.ballcount))
+           pbSafariState.steps, Settings::SAFARI_STEPS, pbSafariState.ballcount))
       end
       commands[cmdQuit = commands.length]   = _INTL("Quit")
     elsif pbInBugContest?
       if pbBugContestState.lastPokemon
         @scene.pbShowInfo(_INTL("Caught: {1}\nLevel: {2}\nBalls: {3}",
-           PBSpecies.getName(pbBugContestState.lastPokemon.species),
+           pbBugContestState.lastPokemon.speciesName,
            pbBugContestState.lastPokemon.level,
            pbBugContestState.ballcount))
       else
@@ -144,7 +148,7 @@ class PokemonPauseMenu
     loop do
       command = @scene.pbShowCommands(commands)
       if cmdPokedex>=0 && command==cmdPokedex
-        if USE_CURRENT_REGION_DEX
+        if Settings::USE_CURRENT_REGION_DEX
           pbFadeOutIn {
             scene = PokemonPokedex_Scene.new
             screen = PokemonPokedexScreen.new(scene)
@@ -184,14 +188,14 @@ class PokemonPauseMenu
           return
         end
       elsif cmdBag>=0 && command==cmdBag
-        item = 0
+        item = nil
         pbFadeOutIn {
           scene = PokemonBag_Scene.new
           screen = PokemonBagScreen.new(scene,$PokemonBag)
           item = screen.pbStartScreen
-          (item>0) ? @scene.pbEndScene : @scene.pbRefresh
+          (item) ? @scene.pbEndScene : @scene.pbRefresh
         }
-        if item>0
+        if item
           $game_temp.in_menu = false
           pbUseKeyItemInField(item)
           return

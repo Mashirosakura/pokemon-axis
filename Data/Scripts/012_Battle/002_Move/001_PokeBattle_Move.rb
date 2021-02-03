@@ -9,7 +9,7 @@ class PokeBattle_Move
   attr_reader   :category
   attr_reader   :accuracy
   attr_accessor :pp
-  attr_writer   :totalpp
+  attr_writer   :total_pp
   attr_reader   :addlEffect
   attr_reader   :target
   attr_reader   :priority
@@ -23,24 +23,23 @@ class PokeBattle_Move
   #=============================================================================
   # Creating a move
   #=============================================================================
-  def initialize(battle,move)
+  def initialize(battle, move)
     @battle     = battle
     @realMove   = move
     @id         = move.id
-    @name       = PBMoves.getName(@id)   # Get the move's name
+    @name       = move.name   # Get the move's name
     # Get data on the move
-    moveData = pbGetMoveData(@id)
-    @function   = moveData[MOVE_FUNCTION_CODE]
-    @baseDamage = moveData[MOVE_BASE_DAMAGE]
-    @type       = moveData[MOVE_TYPE]
-    @category   = moveData[MOVE_CATEGORY]
-    @accuracy   = moveData[MOVE_ACCURACY]
+    @function   = move.function_code
+    @baseDamage = move.base_damage
+    @type       = move.type
+    @category   = move.category
+    @accuracy   = move.accuracy
     @pp         = move.pp   # Can be changed with Mimic/Transform
-    @addlEffect = moveData[MOVE_EFFECT_CHANCE]
-    @target     = moveData[MOVE_TARGET]
-    @priority   = moveData[MOVE_PRIORITY]
-    @flags      = moveData[MOVE_FLAGS]
-    @calcType   = -1
+    @addlEffect = move.effect_chance
+    @target     = move.target
+    @priority   = move.priority
+    @flags      = move.flags
+    @calcType   = nil
     @powerBoost = false   # For Aerilate, Pixilate, Refrigerate, Galvanize
     @snatched   = false
   end
@@ -48,14 +47,14 @@ class PokeBattle_Move
   # This is the code actually used to generate a PokeBattle_Move object. The
   # object generated is a subclass of this one which depends on the move's
   # function code (found in the script section PokeBattle_MoveEffect).
-  def PokeBattle_Move.pbFromPBMove(battle,move)
-    move = PBMove.new(0) if !move
-    moveFunction = pbGetMoveData(move.id,MOVE_FUNCTION_CODE) || "000"
-    className = sprintf("PokeBattle_Move_%s",moveFunction)
+  def PokeBattle_Move.from_pokemon_move(battle, move)
+    validate move => Pokemon::Move
+    moveFunction = move.function_code || "000"
+    className = sprintf("PokeBattle_Move_%s", moveFunction)
     if Object.const_defined?(className)
-      return Object.const_get(className).new(battle,move)
+      return Object.const_get(className).new(battle, move)
     end
-    return PokeBattle_UnimplementedMove.new(battle,move)
+    return PokeBattle_UnimplementedMove.new(battle, move)
   end
 
   #=============================================================================
@@ -63,27 +62,29 @@ class PokeBattle_Move
   #=============================================================================
   def pbTarget(_user); return @target; end
 
-  def totalpp
-    return @totalpp if @totalpp && @totalpp>0   # Usually undefined
-    return @realMove.totalpp if @realMove
+  def total_pp
+    return @total_pp if @total_pp && @total_pp>0   # Usually undefined
+    return @realMove.total_pp if @realMove
     return 0
   end
 
   # NOTE: This method is only ever called while using a move (and also by the
   #       AI), so using @calcType here is acceptable.
   def physicalMove?(thisType=nil)
-    return (@category==0) if MOVE_CATEGORY_PER_MOVE
-    thisType ||= @calcType if @calcType>=0
-    thisType = @type if !thisType
+    return (@category==0) if Settings::MOVE_CATEGORY_PER_MOVE
+    thisType ||= @calcType
+    thisType ||= @type
+    return true if !thisType
     return !PBTypes.isSpecialType?(thisType)
   end
 
   # NOTE: This method is only ever called while using a move (and also by the
   #       AI), so using @calcType here is acceptable.
   def specialMove?(thisType=nil)
-    return (@category==1) if MOVE_CATEGORY_PER_MOVE
-    thisType ||= @calcType if @calcType>=0
-    thisType = @type if !thisType
+    return (@category==1) if Settings::MOVE_CATEGORY_PER_MOVE
+    thisType ||= @calcType
+    thisType ||= @type
+    return false if !thisType
     return PBTypes.isSpecialType?(thisType)
   end
 
@@ -131,7 +132,7 @@ class PokeBattle_Move
   def nonLethal?(_user,_target); return false; end   # For False Swipe
 
   def ignoresSubstitute?(user)   # user is the Pokémon using this move
-    if NEWEST_BATTLE_MECHANICS
+    if Settings::MECHANICS_GENERATION >= 6
       return true if soundMove?
       return true if user && user.hasActiveAbility?(:INFILTRATOR)
     end

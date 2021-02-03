@@ -66,11 +66,7 @@ class Sprite_Reflection
       @sprite.zoom_x   = @rsprite.zoom_x
       @sprite.zoom_y   = @rsprite.zoom_y
       frame = (Graphics.frame_count%40)/10
-      case frame
-      when 1; @sprite.zoom_x *= 0.95
-      when 3; @sprite.zoom_x *= 1.05
-      else; @sprite.zoom_x *= 1.0
-      end
+      @sprite.zoom_x   *= [1.0, 0.95, 1.0, 1.05][frame]
       @sprite.angle    = 180.0
       @sprite.mirror   = true
       @sprite.bitmap   = @rsprite.bitmap
@@ -78,7 +74,7 @@ class Sprite_Reflection
       if @height>0
         @sprite.color   = Color.new(48,96,160,255)   # Dark still water
         @sprite.opacity = @rsprite.opacity
-        @sprite.visible = !TIME_SHADING   # Can't time-tone a colored sprite
+        @sprite.visible = !Settings::TIME_SHADING   # Can't time-tone a colored sprite
       else
         @sprite.color   = Color.new(224,224,224,96)
         @sprite.opacity = @rsprite.opacity*3/4

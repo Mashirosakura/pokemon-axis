@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class ReadyMenuButton < SpriteWrapper
   attr_reader :index   # ID of button
   attr_reader :selected
@@ -66,12 +69,12 @@ class ReadyMenuButton < SpriteWrapper
     self.bitmap.clear
     rect = Rect.new(0,(sel) ? @button.height/2 : 0,@button.width,@button.height/2)
     self.bitmap.blt(0,0,@button.bitmap,rect)
-    textx = (@command[2]) ? 164 : (pbIsImportantItem?(@command[0])) ? 146 : 124
+    textx = (@command[2]) ? 164 : (GameData::Item.get(@command[0]).is_important?) ? 146 : 124
     textpos = [
        [@command[1],textx,18,2,Color.new(248,248,248),Color.new(40,40,40),1],
     ]
     if !@command[2]
-      if !pbIsImportantItem?(@command[0])
+      if !GameData::Item.get(@command[0]).is_important?
         qty = $PokemonBag.pbQuantity(@command[0])
         if qty>99
           textpos.push([_INTL(">99"),230,18,1,
@@ -91,8 +94,9 @@ class ReadyMenuButton < SpriteWrapper
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonReadyMenu_Scene
   attr_reader :sprites
 
@@ -217,8 +221,9 @@ class PokemonReadyMenu_Scene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonReadyMenu
   def initialize(scene)
     @scene = scene
@@ -236,11 +241,11 @@ class PokemonReadyMenu
   def pbStartReadyMenu(moves,items)
     commands = [[],[]]   # Moves, items
     for i in moves
-      commands[0].push([i[0],PBMoves.getName(i[0]),true,i[1]])
+      commands[0].push([i[0], GameData::Move.get(i[0]).name, true, i[1]])
     end
     commands[0].sort! { |a,b| a[1]<=>b[1] }
     for i in items
-      commands[1].push([i,PBItems.getName(i),false])
+      commands[1].push([i, GameData::Item.get(i).name, false])
     end
     commands[1].sort! { |a,b| a[1]<=>b[1] }
     @scene.pbStartScene(commands)
@@ -250,7 +255,7 @@ class PokemonReadyMenu
       if command[0]==0   # Use a move
         move = commands[0][command[1]][0]
         user = $Trainer.party[commands[0][command[1]][3]]
-        if isConst?(move,PBMoves,:FLY)
+        if move == :FLY
           ret = nil
           pbFadeOutInWithUpdate(99999,@scene.sprites) {
             pbHideMenu
@@ -290,38 +295,33 @@ class PokemonReadyMenu
   end
 end
 
-
-
 #===============================================================================
 # Using a registered item
 #===============================================================================
 def pbUseKeyItem
-  moves = [:CUT,:DEFOG,:DIG,:DIVE,:FLASH,:FLY,:HEADBUTT,:ROCKCLIMB,:ROCKSMASH,
-           :SECRETPOWER,:STRENGTH,:SURF,:SWEETSCENT,:TELEPORT,:WATERFALL,
-           :WHIRLPOOL]
-  realmoves = []
-  for i in moves
-    move = getID(PBMoves,i)
-    next if move==0
-    for j in 0...$Trainer.party.length
-      next if $Trainer.party[j].egg?
-      next if !$Trainer.party[j].hasMove?(move)
-      realmoves.push([move,j]) if pbCanUseHiddenMove?($Trainer.party[j],move,false)
-      break
+  moves = [:CUT, :DEFOG, :DIG, :DIVE, :FLASH, :FLY, :HEADBUTT, :ROCKCLIMB,
+           :ROCKSMASH, :SECRETPOWER, :STRENGTH, :SURF, :SWEETSCENT, :TELEPORT,
+           :WATERFALL, :WHIRLPOOL]
+  real_moves = []
+  moves.each do |move|
+    $Trainer.pokemon_party.each_with_index do |pkmn, i|
+      next if !pkmn.hasMove?(move)
+      real_moves.push([move, i]) if pbCanUseHiddenMove?(pkmn, move, false)
     end
   end
-  realitems = []
+  real_items = []
   for i in $PokemonBag.registeredItems
-    realitems.push(i) if $PokemonBag.pbHasItem?(i)
+    itm = GameData::Item.get(i).id
+    real_items.push(itm) if $PokemonBag.pbHasItem?(itm)
   end
-  if realitems.length==0 && realmoves.length==0
+  if real_items.length == 0 && real_moves.length == 0
     pbMessage(_INTL("An item in the Bag can be registered to this key for instant use."))
   else
     $game_temp.in_menu = true
     $game_map.update
     sscene = PokemonReadyMenu_Scene.new
     sscreen = PokemonReadyMenu.new(sscene)
-    sscreen.pbStartReadyMenu(realmoves,realitems)
+    sscreen.pbStartReadyMenu(real_moves, real_items)
     $game_temp.in_menu = false
   end
 end

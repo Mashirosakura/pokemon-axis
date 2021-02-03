@@ -24,15 +24,14 @@ class PokemonEggHatch_Scene
     @sprites["pokemon"].setOffset(PictureOrigin::Bottom)
     @sprites["pokemon"].x = Graphics.width/2
     @sprites["pokemon"].y = 264+56   # 56 to offset the egg sprite
-    @sprites["pokemon"].setSpeciesBitmap(@pokemon.species,@pokemon.female?,
-                                         (@pokemon.form rescue 0),@pokemon.shiny?,
-                                         false,false,true)   # Egg sprite
+    @sprites["pokemon"].setSpeciesBitmap(@pokemon.species, @pokemon.gender,
+                                         @pokemon.form, @pokemon.shiny?,
+                                         false, false, true)   # Egg sprite
     # Load egg cracks bitmap
-    crackfilename=sprintf("Graphics/Battlers/%seggCracks",
-       getConstantName(PBSpecies,@pokemon.species)) rescue nil
+    crackfilename = sprintf("Graphics/Pokemon/Eggs/%s_cracks", @pokemon.species)
     if !pbResolveBitmap(crackfilename)
-      crackfilename=sprintf("Graphics/Battlers/%03deggCracks",@pokemon.species)
-      crackfilename=sprintf("Graphics/Battlers/eggCracks") if !pbResolveBitmap(crackfilename)
+      crackfilename = sprintf("Graphics/Pokemon/Eggs/%03d_cracks", @pokemon.species_data.id_number)
+      crackfilename = sprintf("Graphics/Pokemon/Eggs/000_cracks") if !pbResolveBitmap(crackfilename)
     end
     crackfilename=pbResolveBitmap(crackfilename)
     @hatchSheet=AnimatedBitmap.new(crackfilename)
@@ -90,7 +89,7 @@ class PokemonEggHatch_Scene
     @sprites["pokemon"].setPokemonBitmap(@pokemon) # Pokémon sprite
     @sprites["pokemon"].x = Graphics.width/2
     @sprites["pokemon"].y = 264
-    pbApplyBattlerMetricsToSprite(@sprites["pokemon"],1,@pokemon.fSpecies)
+    @pokemon.species_data.apply_metrics_to_sprite(@sprites["pokemon"], 1)
     @sprites["hatch"].visible=false
     for i in 1..fadeTime
       @sprites["pokemon"].tone=Tone.new(255-i*toneDiff,255-i*toneDiff,255-i*toneDiff)
@@ -100,18 +99,19 @@ class PokemonEggHatch_Scene
     @sprites["pokemon"].tone=Tone.new(0,0,0)
     @sprites["overlay"].opacity=0
     # Finish scene
-    frames=pbCryFrameLength(@pokemon)
-    pbPlayCry(@pokemon)
+    frames = GameData::Species.cry_length(@pokemon)
+    GameData::Species.play_cry_from_pokemon(@pokemon)
     updateScene(frames)
     pbBGMStop()
     pbMEPlay("Evolution success")
-    pbMessage(_INTL("\\se[]{1} hatched from the Egg!\\wt[80]",@pokemon.name)) { update }
+    @pokemon.name = nil
+    pbMessage(_INTL("\\se[]{1} hatched from the Egg!\\wt[80]", @pokemon.name)) { update }
     if pbConfirmMessage(
-        _INTL("Would you like to nickname the newly hatched {1}?",@pokemon.name)) { update }
-      nickname=pbEnterPokemonName(_INTL("{1}'s nickname?",@pokemon.name),
-         0,PokeBattle_Pokemon::MAX_POKEMON_NAME_SIZE,"",@pokemon,true)
-      @pokemon.name=nickname if nickname!=""
-      @nicknamed=true
+        _INTL("Would you like to nickname the newly hatched {1}?", @pokemon.name)) { update }
+      nickname = pbEnterPokemonName(_INTL("{1}'s nickname?", @pokemon.name),
+                                  0, Pokemon::MAX_NAME_SIZE, "", @pokemon, true)
+      @pokemon.name = nickname
+      @nicknamed = true
     end
   end
 
@@ -163,8 +163,9 @@ class PokemonEggHatch_Scene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonEggHatchScreen
   def initialize(scene)
     @scene=scene
@@ -177,8 +178,9 @@ class PokemonEggHatchScreen
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbHatchAnimation(pokemon)
   pbMessage(_INTL("Huh?\1"))
   pbFadeOutInWithMusic {
@@ -191,42 +193,40 @@ end
 
 def pbHatch(pokemon)
   speciesname = pokemon.speciesName
-  pokemon.name           = speciesname
-  pokemon.trainerID      = $Trainer.id
-  pokemon.ot             = $Trainer.name
+  pokemon.name           = nil
+  pokemon.owner          = Pokemon::Owner.new_from_trainer($Trainer)
   pokemon.happiness      = 120
   pokemon.timeEggHatched = pbGetTimeNow
-  pokemon.obtainMode     = 1   # hatched from egg
-  pokemon.hatchedMap     = $game_map.map_id
-  $Trainer.seen[pokemon.species]  = true
-  $Trainer.owned[pokemon.species] = true
+  pokemon.obtain_method  = 1   # hatched from egg
+  pokemon.hatched_map    = $game_map.map_id
+  $Trainer.set_seen(pokemon.species)
+  $Trainer.set_owned(pokemon.species)
   pbSeenForm(pokemon)
-  pokemon.pbRecordFirstMoves
+  pokemon.record_first_moves
   if !pbHatchAnimation(pokemon)
     pbMessage(_INTL("Huh?\1"))
     pbMessage(_INTL("...\1"))
     pbMessage(_INTL("... .... .....\1"))
-    pbMessage(_INTL("{1} hatched from the Egg!",speciesname))
-    if pbConfirmMessage(_INTL("Would you like to nickname the newly hatched {1}?",speciesname))
-      nickname = pbEnterPokemonName(_INTL("{1}'s nickname?",speciesname),
-         0,PokeBattle_Pokemon::MAX_POKEMON_NAME_SIZE,"",pokemon)
-      pokemon.name = nickname if nickname!=""
+    pbMessage(_INTL("{1} hatched from the Egg!", speciesname))
+    if pbConfirmMessage(_INTL("Would you like to nickname the newly hatched {1}?", speciesname))
+      nickname = pbEnterPokemonName(_INTL("{1}'s nickname?", speciesname),
+                                    0, Pokemon::MAX_NAME_SIZE, "", pokemon)
+      pokemon.name = nickname
     end
   end
 end
 
 Events.onStepTaken += proc { |_sender,_e|
   for egg in $Trainer.party
-    next if egg.eggsteps<=0
-    egg.eggsteps -= 1
-    for i in $Trainer.pokemonParty
-      next if !isConst?(i.ability,PBAbilities,:FLAMEBODY) &&
-              !isConst?(i.ability,PBAbilities,:MAGMAARMOR)
-      egg.eggsteps -= 1
+    next if egg.steps_to_hatch <= 0
+    egg.steps_to_hatch -= 1
+    for i in $Trainer.pokemon_party
+      next if !i.hasAbility?(:FLAMEBODY) && !i.hasAbility?(:MAGMAARMOR)
+      egg.steps_to_hatch -= 1
       break
     end
-    if egg.eggsteps<=0
-      egg.eggsteps = 0
+    if egg.steps_to_hatch <= 0
+      egg.steps_to_hatch = 0
       pbHatch(egg)
     end
   end

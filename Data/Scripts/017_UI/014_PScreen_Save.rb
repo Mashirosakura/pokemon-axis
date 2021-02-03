@@ -1,5 +1,7 @@
+#===============================================================================
+#
+#===============================================================================
 def pbSave(safesave=false)
-  $Trainer.metaID=$PokemonGlobal.playerID
   begin
     File.open(RTP.getSaveFileName("Game.rxdata"),"wb") { |f|
        Marshal.dump($Trainer,f)
@@ -24,7 +26,7 @@ def pbSave(safesave=false)
        Marshal.dump($PokemonMap,f)
        Marshal.dump($PokemonBag,f)
        Marshal.dump($PokemonStorage,f)
-       Marshal.dump(ESSENTIALS_VERSION,f)
+       Marshal.dump(Essentials::VERSION, f)
     }
     Graphics.frame_reset
   rescue
@@ -55,8 +57,9 @@ def pbEmergencySave
   $scene=oldscene
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonSave_Scene
   def pbStartScreen
     @viewport=Viewport.new(0,0,Graphics.width,Graphics.height)
@@ -75,9 +78,9 @@ class PokemonSave_Scene
     else
       loctext+=_INTL("Time<r><c3={1}>{2}m</c3><br>",textColor,min)
     end
-    loctext+=_INTL("Badges<r><c3={1}>{2}</c3><br>",textColor,$Trainer.numbadges)
+    loctext+=_INTL("Badges<r><c3={1}>{2}</c3><br>",textColor,$Trainer.badge_count)
     if $Trainer.pokedex
-      loctext+=_INTL("Pokédex<r><c3={1}>{2}/{3}</c3>",textColor,$Trainer.pokedexOwned,$Trainer.pokedexSeen)
+      loctext+=_INTL("Pokédex<r><c3={1}>{2}/{3}</c3>",textColor,$Trainer.owned_count,$Trainer.seen_count)
     end
     @sprites["locwindow"]=Window_AdvancedTextPokemon.new(loctext)
     @sprites["locwindow"].viewport=@viewport
@@ -93,8 +96,9 @@ class PokemonSave_Scene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonSaveScreen
   def initialize(scene)
     @scene=scene
@@ -146,8 +150,9 @@ class PokemonSaveScreen
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbSaveScreen
   scene = PokemonSave_Scene.new
   screen = PokemonSaveScreen.new(scene)

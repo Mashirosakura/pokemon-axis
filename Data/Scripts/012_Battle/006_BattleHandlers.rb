@@ -485,23 +485,16 @@ end
 
 
 
-BASE_ACC  = 0
-ACC_STAGE = 1
-EVA_STAGE = 2
-ACC_MULT  = 3
-EVA_MULT  = 4
-
-BASE_DMG_MULT  = 0
-ATK_MULT       = 1
-DEF_MULT       = 2
-FINAL_DMG_MULT = 3
-
 def pbBattleConfusionBerry(battler,battle,item,forced,flavor,confuseMsg)
   return false if !forced && !battler.canHeal?
-  return false if !forced && !battler.canConsumePinchBerry?(item,false)
-  itemName = PBItems.getName(item)
+  return false if !forced && !battler.canConsumePinchBerry?(Settings::MECHANICS_GENERATION >= 7)
+  itemName = GameData::Item.get(item).name
   battle.pbCommonAnimation("EatBerry",battler) if !forced
-  amt = (NEWEST_BATTLE_MECHANICS) ? battler.pbRecoverHP(battler.totalhp/3) : battler.pbRecoverHP(battler.totalhp/8)
+  fraction_to_heal = 8   # Gens 6 and lower
+  if Settings::MECHANICS_GENERATION == 7;    fraction_to_heal = 2
+  elsif Settings::MECHANICS_GENERATION >= 8; fraction_to_heal = 3
+  end
+  amt = battler.pbRecoverHP(battler.totalhp / fraction_to_heal)
   amt *= 2 if battler.hasActiveAbility?(:RIPEN)
   if amt>0
     if forced
@@ -511,19 +504,21 @@ def pbBattleConfusionBerry(battler,battle,item,forced,flavor,confuseMsg)
       battle.pbDisplay(_INTL("{1} restored its health using its {2}!",battler.pbThis,itemName))
     end
   end
-  nUp = PBNatures.getStatRaised(battler.nature)
-  nDn = PBNatures.getStatLowered(battler.nature)
-  if nUp!=nDn && nDn-1==flavor
+  flavor_stat = [PBStats::ATTACK, PBStats::DEFENSE, PBStats::SPEED,
+                 PBStats::SPATK, PBStats::SPDEF][flavor]
+  battler.nature.stat_changes.each do |change|
+    next if change[1] > 0 || change[0] != flavor_stat
     battle.pbDisplay(confuseMsg)
     battler.pbConfuse if battler.pbCanConfuseSelf?(false)
+    break
   end
   return true
 end
 
 def pbBattleStatIncreasingBerry(battler,battle,item,forced,stat,increment=1)
-  return false if !forced && !battler.canConsumePinchBerry?(item)
+  return false if !forced && !battler.canConsumePinchBerry?
   return false if !battler.pbCanRaiseStatStage?(stat,battler)
-  itemName = PBItems.getName(item)
+  itemName = GameData::Item.get(item).name
   increment *=2 if battler.hasActiveAbility?(:RIPEN)
   if forced
     PBDebug.log("[Item triggered] Forced consuming of #{itemName}")
@@ -537,7 +532,7 @@ end
 # one of the ability's bearer's stats instead.
 def pbBattleMoveImmunityStatAbility(user,target,move,moveType,immuneType,stat,increment,battle)
   return false if user.index==target.index
-  return false if !isConst?(moveType,PBTypes,immuneType)
+  return false if moveType != immuneType
   battle.pbShowAbilitySplash(target)
   if target.pbCanRaiseStatStage?(stat,target)
     if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
@@ -561,7 +556,7 @@ end
 # ability's bearer by 1/4 of its total HP instead.
 def pbBattleMoveImmunityHealAbility(user,target,move,moveType,immuneType,battle)
   return false if user.index==target.index
-  return false if !isConst?(moveType,PBTypes,immuneType)
+  return false if moveType != immuneType
   battle.pbShowAbilitySplash(target)
   if target.canHeal? && target.pbRecoverHP(target.totalhp/4)>0
     if PokeBattle_SceneConstants::USE_ABILITY_SPLASH
@@ -584,19 +579,19 @@ end
 def pbBattleGem(user,type,move,mults,moveType)
   # Pledge moves never consume Gems
   return if move.is_a?(PokeBattle_PledgeMove)
-  return if !isConst?(moveType,PBTypes,type)
-  user.effects[PBEffects::GemConsumed] = user.item
-  if NEWEST_BATTLE_MECHANICS
-    mults[BASE_DMG_MULT] *= 1.3
+  return if moveType != type
+  user.effects[PBEffects::GemConsumed] = user.item_id
+  if Settings::MECHANICS_GENERATION >= 6
+    mults[:base_damage_multiplier] *= 1.3
   else
-    mults[BASE_DMG_MULT] *= 1.5
+    mults[:base_damage_multiplier] *= 1.5
   end
 end
 
 def pbBattleTypeWeakingBerry(type,moveType,target,mults)
-  return if !isConst?(moveType,PBTypes,type)
-  return if PBTypes.resistant?(target.damageState.typeMod) && !isConst?(moveType,PBTypes,:NORMAL)
-  mults[FINAL_DMG_MULT] = (mults[FINAL_DMG_MULT]/((target.hasActiveAbility?(:RIPEN))? 4 : 2)).round
+  return if moveType != type
+  return if PBTypeEffectiveness.resistant?(target.damageState.typeMod) && moveType != :NORMAL
+  mults[:final_damage_multiplier] /= 2
   target.damageState.berryWeakened = true
   target.battle.pbCommonAnimation("EatBerry",target)
 end
@@ -612,10 +607,10 @@ def pbBattleWeatherAbility(weather,battler,battle,ignorePrimal=false)
     battle.pbDisplay(_INTL("{1}'s {2} activated!",battler.pbThis,battler.abilityName))
   end
   fixedDuration = false
-  fixedDuration = true if NEWEST_BATTLE_MECHANICS &&
-                          weather!=PBWeather::HarshSun &&
-                          weather!=PBWeather::HeavyRain &&
-                          weather!=PBWeather::StrongWinds
+  fixedDuration = true if Settings::FIXED_DURATION_WEATHER_FROM_ABILITY &&
+                          weather != PBWeather::HarshSun &&
+                          weather != PBWeather::HeavyRain &&
+                          weather != PBWeather::StrongWinds
   battle.pbStartWeather(battler,weather,fixedDuration)
   # NOTE: The ability splash is hidden again in def pbStartWeather.
 end

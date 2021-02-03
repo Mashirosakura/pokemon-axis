@@ -1,49 +1,96 @@
 module EncounterTypes
-  Land         = 0
-  Cave         = 1
-  Water        = 2
-  RockSmash    = 3
-  OldRod       = 4
-  GoodRod      = 5
-  SuperRod     = 6
-  HeadbuttLow  = 7
-  HeadbuttHigh = 8
-  LandMorning  = 9
-  LandDay      = 10
-  LandNight    = 11
-  BugContest   = 12
+  Land           = 0
+  LandDay        = 1
+  LandNight      = 2
+  LandMorning    = 3
+  LandAfternoon  = 4
+  LandEvening    = 5
+  Cave           = 6
+  CaveDay        = 7
+  CaveNight      = 8
+  CaveMorning    = 9
+  CaveAfternoon  = 10
+  CaveEvening    = 11
+  Water          = 12
+  WaterDay       = 13
+  WaterNight     = 14
+  WaterMorning   = 15
+  WaterAfternoon = 16
+  WaterEvening   = 17
+  OldRod         = 18
+  GoodRod        = 19
+  SuperRod       = 20
+  RockSmash      = 21
+  HeadbuttLow    = 22
+  HeadbuttHigh   = 23
+  BugContest     = 24
+
   Names = [
-     "Land",
-     "Cave",
-     "Water",
-     "RockSmash",
-     "OldRod",
-     "GoodRod",
-     "SuperRod",
-     "HeadbuttLow",
-     "HeadbuttHigh",
-     "LandMorning",
-     "LandDay",
-     "LandNight",
-     "BugContest"
+    "Land", "LandDay", "LandNight", "LandMorning", "LandAfternoon", "LandEvening",
+    "Cave", "CaveDay", "CaveNight", "CaveMorning", "CaveAfternoon", "CaveEvening",
+    "Water", "WaterDay", "WaterNight", "WaterMorning", "WaterAfternoon", "WaterEvening",
+    "OldRod", "GoodRod", "SuperRod", "RockSmash", "HeadbuttLow", "HeadbuttHigh",
+    "BugContest"
   ]
-  EnctypeChances = [
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [60,30,5,4,1],
-     [60,30,5,4,1],
-     [70,30],
-     [60,20,20],
-     [40,40,15,4,1],
-     [30,25,20,10,5,5,4,1],
-     [30,25,20,10,5,5,4,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1],
-     [20,20,10,10,10,10,5,5,4,4,1,1]
+  Probabilities = [
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1],
+    [60, 30, 5, 4, 1],
+    [60, 30, 5, 4, 1],
+    [60, 30, 5, 4, 1],
+    [60, 30, 5, 4, 1],
+    [60, 30, 5, 4, 1],
+    [60, 30, 5, 4, 1],
+    [70, 30],
+    [60, 20, 20],
+    [40, 40, 15, 4, 1],
+    [60, 30, 5, 4, 1],
+    [30, 25, 20, 10, 5, 5, 4, 1],
+    [30, 25, 20, 10, 5, 5, 4, 1],
+    [20, 20, 10, 10, 10, 10, 5, 5, 4, 4, 1, 1]
   ]
-  EnctypeDensities   = [25, 10, 10, 0, 0, 0, 0, 0, 0, 25, 25, 25, 25]
-  EnctypeCompileDens = [ 1,  2,  3, 0, 0, 0, 0, 0, 0,  1,  1,  1,  1]
+  Chances_Per_Step = [
+    25, 25, 25, 25, 25, 25,   # Lands
+    10, 10, 10, 10, 10, 10,   # Caves
+    10, 10, 10, 10, 10, 10,   # Waters
+    0, 0, 0, 0, 0, 0, 25
+  ]
+  Kinds = [
+    1, 1, 1, 1, 1, 1,   # Lands
+    2, 2, 2, 2, 2, 2,   # Caves
+    3, 3, 3, 3, 3, 3,   # Waters
+    0, 0, 0, 0, 0, 0, 1
+  ]
+
+  def self.is_land_type?(enc_type)
+    return self.is_normal_land_type?(enc_type) || enc_type == BugContest
+  end
+
+  def self.is_normal_land_type?(enc_type)
+    return [Land, LandDay, LandNight, LandMorning, LandAfternoon, LandEvening].include?(enc_type)
+  end
+
+  def self.is_cave_type?(enc_type)
+    return [Cave, CaveDay, CaveNight, CaveMorning, CaveAfternoon, CaveEvening].include?(enc_type)
+  end
+
+  def self.is_water_type?(enc_type)
+    return [Water, WaterDay, WaterNight, WaterMorning, WaterAfternoon, WaterEvening].include?(enc_type)
+  end
+
+  def self.is_fishing_type?(enc_type)
+    return [OldRod, GoodRod, SuperRod].include?(enc_type)
+  end
 end
 
 
@@ -52,356 +99,358 @@ end
 #
 #===============================================================================
 class PokemonEncounters
-  attr_reader :stepcount
+  attr_reader :step_count
 
   def initialize
-    @enctypes = []
-    @density = nil
+    @step_chances     = nil
+    @encounter_tables = []
   end
 
-  def setup(mapID)
-    @stepcount = 0
-    @density   = nil
-    @enctypes  = []
-    begin
-      data = pbLoadEncountersData
-      if data.is_a?(Hash) && data[mapID]
-        @density  = data[mapID][0]
-        @enctypes = data[mapID][1]
-      else
-        @density  = nil
-        @enctypes = []
-      end
-    rescue
-      @density  = nil
-      @enctypes = []
+  def setup(map_ID)
+    @step_count       = 0
+    @step_chances     = nil
+    @encounter_tables = []
+    encounter_data = GameData::Encounter.get(map_ID, $PokemonGlobal.encounter_version)
+    if encounter_data
+      @step_chances     = encounter_data.step_chances.clone
+      @encounter_tables = Marshal.load(Marshal.dump(encounter_data.types))
     end
   end
 
-  def clearStepCount; @stepcount = 0; end
+  def reset_step_count
+    @step_count = 0
+  end
+
+  #=============================================================================
 
   # Returns whether encounters for the given encounter type have been defined
   # for the current map.
-  def hasEncounter?(enc)
-    return false if @density==nil || enc<0
-    return @enctypes[enc] ? true : false
+  def has_encounter_type?(enc_type)
+    return false if enc_type < 0
+    return @encounter_tables[enc_type] && @encounter_tables[enc_type].length > 0
   end
 
   # Returns whether encounters for the given encounter type have been defined
   # for the given map. Only called by Bug Catching Contest to see if it can use
   # the map's BugContest encounter type to generate caught Pokémon for the other
   # contestants.
-  def pbMapHasEncounter?(mapID,enctype)
-    data = pbLoadEncountersData
-    if data.is_a?(Hash) && data[mapID]
-      density  = data[mapID][0]
-      enctypes = data[mapID][1]
-    else
-      return false
-    end
-    return false if density==nil || enctype<0
-    return enctypes[enctype] ? true : false
+  def map_has_encounter_type?(map_ID, enc_type)
+    return false if enc_type < 0
+    encounter_data = GameData::Encounter.get(map_ID, $PokemonGlobal.encounter_version)
+    return false if !encounter_data
+    return encounter_data.types[enc_type] && encounter_data.types[enc_type].length > 0
+  end
+
+  # Returns whether land-like encounters have been defined for the current map.
+  # Applies only to encounters triggered by moving around.
+  def has_land_encounters?
+    return has_normal_land_encounters? ||
+           has_encounter_type?(EncounterTypes::BugContest)
+  end
+
+  # Returns whether land-like encounters have been defined for the current map
+  # (ignoring the Bug Catching Contest one).
+  # Applies only to encounters triggered by moving around.
+  def has_normal_land_encounters?
+    return has_encounter_type?(EncounterTypes::Land) ||
+           has_encounter_type?(EncounterTypes::LandDay) ||
+           has_encounter_type?(EncounterTypes::LandNight) ||
+           has_encounter_type?(EncounterTypes::LandMorning) ||
+           has_encounter_type?(EncounterTypes::LandAfternoon) ||
+           has_encounter_type?(EncounterTypes::LandEvening)
   end
 
   # Returns whether cave-like encounters have been defined for the current map.
   # Applies only to encounters triggered by moving around.
-  def isCave?
-    return false if @density==nil
-    return @enctypes[EncounterTypes::Cave] ? true : false
-  end
-
-  # Returns whether grass-like encounters have been defined for the current map.
-  # Applies only to encounters triggered by moving around.
-  def isGrass?
-    return false if @density==nil
-    return (@enctypes[EncounterTypes::Land] ||
-            @enctypes[EncounterTypes::LandMorning] ||
-            @enctypes[EncounterTypes::LandDay] ||
-            @enctypes[EncounterTypes::LandNight] ||
-            @enctypes[EncounterTypes::BugContest]) ? true : false
-  end
-
-  # Returns whether grass-like encounters have been defined for the current map
-  # (ignoring the Bug Catching Contest one).
-  # Applies only to encounters triggered by moving around.
-  def isRegularGrass?
-    return false if @density==nil
-    return (@enctypes[EncounterTypes::Land] ||
-            @enctypes[EncounterTypes::LandMorning] ||
-            @enctypes[EncounterTypes::LandDay] ||
-            @enctypes[EncounterTypes::LandNight]) ? true : false
+  def has_cave_encounters?
+    return has_encounter_type?(EncounterTypes::Cave) ||
+           has_encounter_type?(EncounterTypes::CaveDay) ||
+           has_encounter_type?(EncounterTypes::CaveNight) ||
+           has_encounter_type?(EncounterTypes::CaveMorning) ||
+           has_encounter_type?(EncounterTypes::CaveAfternoon) ||
+           has_encounter_type?(EncounterTypes::CaveEvening)
   end
 
   # Returns whether water-like encounters have been defined for the current map.
   # Applies only to encounters triggered by moving around (i.e. not fishing).
-  def isWater?
-    return false if @density==nil
-    return @enctypes[EncounterTypes::Water] ? true : false
+  def has_water_encounters?
+    return has_encounter_type?(EncounterTypes::Water) ||
+           has_encounter_type?(EncounterTypes::WaterDay) ||
+           has_encounter_type?(EncounterTypes::WaterNight) ||
+           has_encounter_type?(EncounterTypes::WaterMorning) ||
+           has_encounter_type?(EncounterTypes::WaterAfternoon) ||
+           has_encounter_type?(EncounterTypes::WaterEvening)
   end
 
-  # Returns whether it is theoretically possible to have an encounter in the
-  # player's current location.
-  def isEncounterPossibleHere?
-    if $PokemonGlobal.surfing
-      return true
-    elsif PBTerrain.isIce?(pbGetTerrainTag($game_player))
-      return false
-    elsif self.isCave?
-      return true
-    elsif self.isGrass?
-      return PBTerrain.isGrass?($game_map.terrain_tag($game_player.x,$game_player.y))
+  #=============================================================================
+
+  # Returns whether the player's current location allows wild encounters to
+  # trigger upon taking a step.
+  def encounter_possible_here?
+    return true if $PokemonGlobal.surfing
+    terrain_tag = $game_map.terrain_tag($game_player.x, $game_player.y)
+    return false if PBTerrain.isIce?(terrain_tag)
+    return true if has_cave_encounters?   # i.e. this map is a cave
+    return true if PBTerrain.isGrass?(terrain_tag) && has_land_encounters?
+    return false
+  end
+
+  # Returns whether a wild encounter should happen, based on the probability of
+  # one triggering upon taking a step.
+  def step_triggers_encounter?(enc_type)
+    if enc_type < 0 || enc_type > EncounterTypes::Probabilities.length
+      raise ArgumentError.new(_INTL("Encounter type out of range"))
     end
+    return false if $game_system.encounter_disabled
+    return false if !$Trainer
+    return false if $DEBUG && Input.press?(Input::CTRL)
+    # Wild encounters cannot happen for the first 3 steps after a previous wild
+    # encounter
+    @step_count += 1
+    return false if @step_count <= 3
+    # Check if enc_type has a defined step chance/encounter table
+    return false if !@step_chances[enc_type] || @step_chances[enc_type] == 0
+    return false if !has_encounter_type?(enc_type)
+    # Determine the encounter step chance (probability of a wild encounter
+    # happening). The actual probability is the written encounter step chance,
+    # with modifiers applied, divided by 180.
+    encount = @step_chances[enc_type].to_f
+    encount *= 0.8 if $PokemonGlobal.bicycle
+    if !Settings::FLUTES_CHANGE_WILD_ENCOUNTER_LEVELS
+      encount /= 2 if $PokemonMap.blackFluteUsed
+      encount *= 1.5 if $PokemonMap.whiteFluteUsed
+    end
+    first_pkmn = $Trainer.first_pokemon
+    if first_pkmn
+      case first_pkmn.item_id
+      when :CLEANSETAG
+        encount *= 2.0 / 3
+      when :PUREINCENSE
+        encount *= 2.0 / 3
+      else   # Ignore ability effects if an item effect applies
+        case first_pkmn.ability_id
+        when :STENCH, :WHITESMOKE, :QUICKFEET
+          encount /= 2
+        when :SNOWCLOAK
+          encount /= 2 if $game_screen.weather_type == PBFieldWeather::Snow ||
+                          $game_screen.weather_type == PBFieldWeather::Blizzard
+        when :SANDVEIL
+          encount /= 2 if $game_screen.weather_type == PBFieldWeather::Sandstorm
+        when :SWARM
+          encount *= 1.5
+        when :ILLUMINATE, :ARENATRAP, :NOGUARD
+          encount *= 2
+        end
+      end
+    end
+    # Decide whether the wild encounter should actually happen
+    return rand(180) < encount
+  end
+
+  # Returns whether an encounter with the given Pokémon should be allowed after
+  # taking into account Repels and ability effects.
+  def allow_encounter?(enc_data, ignore_repel = false)
+    return false if !enc_data
+    # Repel
+    if !ignore_repel && $PokemonGlobal.repel > 0 && !pbPokeRadarOnShakingGrass
+      first_pkmn = (Settings::REPEL_COUNTS_FAINTED_POKEMON) ? $Trainer.first_pokemon : $Trainer.first_able_pokemon
+      return false if first_pkmn && enc_data[1] < first_pkmn.level
+    end
+    # Some abilities make wild encounters less likely if the wild Pokémon is
+    # sufficiently weaker than the Pokémon with the ability
+    first_pkmn = $Trainer.first_pokemon
+    if first_pkmn
+      case first_pkmn.ability_id
+      when :INTIMIDATE, :KEENEYE
+        return false if enc_data[1] <= first_pkmn.level - 5 && rand(100) < 50
+      end
+    end
+    return true
+  end
+
+  # Returns whether a wild encounter should be turned into a double wild
+  # encounter.
+  def have_double_wild_battle?
+    return false if $PokemonTemp.forceSingleBattle
+    return false if pbInSafari?
+    return true if $PokemonGlobal.partner
+    return false if $Trainer.able_pokemon_count <= 1
+    return true if PBTerrain.isDoubleWildBattle?(pbGetTerrainTag) && rand(100) < 30
     return false
   end
 
   # Returns the encounter method that the current encounter should be generated
   # from, depending on the player's current location.
-  def pbEncounterType
+  def encounter_type
+    time = pbGetTimeNow
+    ret = -1
     if $PokemonGlobal.surfing
-      return EncounterTypes::Water
-    elsif self.isCave?
-      return EncounterTypes::Cave
-    elsif self.isGrass?
-      time = pbGetTimeNow
-      enctype = EncounterTypes::Land
-      enctype = EncounterTypes::LandNight if self.hasEncounter?(EncounterTypes::LandNight) && PBDayNight.isNight?(time)
-      enctype = EncounterTypes::LandDay if self.hasEncounter?(EncounterTypes::LandDay) && PBDayNight.isDay?(time)
-      enctype = EncounterTypes::LandMorning if self.hasEncounter?(EncounterTypes::LandMorning) && PBDayNight.isMorning?(time)
-      if pbInBugContest? && self.hasEncounter?(EncounterTypes::BugContest)
-        enctype = EncounterTypes::BugContest
+      ret = EncounterTypes::Water if has_encounter_type?(EncounterTypes::Water)
+      if PBDayNight.isDay?(time)
+        ret = EncounterTypes::WaterDay if has_encounter_type?(EncounterTypes::WaterDay)
+        if PBDayNight.isMorning?(time)
+          ret = EncounterTypes::WaterMorning if has_encounter_type?(EncounterTypes::WaterMorning)
+        elsif PBDayNight.isAfternoon?(time)
+          ret = EncounterTypes::WaterAfternoon if has_encounter_type?(EncounterTypes::WaterAfternoon)
+        elsif PBDayNight.isEvening?(time)
+          ret = EncounterTypes::WaterEvening if has_encounter_type?(EncounterTypes::WaterEvening)
+        end
+      else
+        ret = EncounterTypes::WaterNight if has_encounter_type?(EncounterTypes::WaterNight)
       end
-      return enctype
-    end
-    return -1
-  end
-
-  # Returns all the encounter tables for the given map.
-  # You can alias this method and modify the returned array's contents if you
-  # want to change the encounter table for some reason. Note that each sub-array
-  # should contain the right number of entries for that encounter type.
-  # Each encounter table element is an array: [species, minLevel, maxLevel]
-  def pbGetEncounterTables(mapID=-1)
-    if mapID>0
-      data = pbLoadEncountersData
-      return nil if !data.is_a?(Hash) || !data[mapID]
-      return data[mapID][1]
-    else   # Current map
-      return Marshal.load(Marshal.dump(@enctypes))
-    end
-  end
-
-  # Returns an array of the encounter table for the given map/encounter type.
-  def pbGetEncounterTable(encType,mapID=-1)
-    ret = pbGetEncounterTables(mapID)
-    return ret[encType]
-  end
-
-  # Only called by Bug Catching Contest, when determining what the other
-  # contestants caught.
-  def pbMapEncounter(mapID,encType)
-    if encType<0 || encType>EncounterTypes::EnctypeChances.length
-      raise ArgumentError.new(_INTL("Encounter type out of range"))
-    end
-    # Get the encounter table
-    encList = pbGetEncounterTable(encType,mapID)
-    return nil if encList==nil
-    # Calculate the total probability value
-    chances = EncounterTypes::EnctypeChances[encType]
-    chanceTotal = 0
-    chances.each { |a| chanceTotal += a }
-    # Choose a random entry in the encounter table based on entry weights
-    rnd = rand(chanceTotal)
-    chance = 0
-    chosenPkmn = 0   # Index of the chosen entry
-    for i in 0...chances.length
-      chance += chances[i]
-      if rnd<chance
-        chosenPkmn = i
-        break
+    else
+      check_land = false
+      if has_cave_encounters?
+        check_land = PBTerrain.isGrass?($game_map.terrain_tag($game_player.x, $game_player.y))
+        ret = EncounterTypes::Cave if has_encounter_type?(EncounterTypes::Cave)
+        if PBDayNight.isDay?(time)
+          ret = EncounterTypes::CaveDay if has_encounter_type?(EncounterTypes::CaveDay)
+          if PBDayNight.isMorning?(time)
+            ret = EncounterTypes::CaveMorning if has_encounter_type?(EncounterTypes::CaveMorning)
+          elsif PBDayNight.isAfternoon?(time)
+            ret = EncounterTypes::CaveAfternoon if has_encounter_type?(EncounterTypes::CaveAfternoon)
+          elsif PBDayNight.isEvening?(time)
+            ret = EncounterTypes::CaveEvening if has_encounter_type?(EncounterTypes::CaveEvening)
+          end
+        else
+          ret = EncounterTypes::CaveNight if has_encounter_type?(EncounterTypes::CaveNight)
+        end
+      end
+      # Land
+      if has_land_encounters? || check_land
+        ret = EncounterTypes::Land if has_encounter_type?(EncounterTypes::Land)
+        if PBDayNight.isDay?(time)
+          ret = EncounterTypes::LandDay if has_encounter_type?(EncounterTypes::LandDay)
+          if PBDayNight.isMorning?(time)
+            ret = EncounterTypes::LandMorning if has_encounter_type?(EncounterTypes::LandMorning)
+          elsif PBDayNight.isAfternoon?(time)
+            ret = EncounterTypes::LandAfternoon if has_encounter_type?(EncounterTypes::LandAfternoon)
+          elsif PBDayNight.isEvening?(time)
+            ret = EncounterTypes::LandEvening if has_encounter_type?(EncounterTypes::LandEvening)
+          end
+        else
+          ret = EncounterTypes::LandNight if has_encounter_type?(EncounterTypes::LandNight)
+        end
+        if pbInBugContest? && has_encounter_type?(EncounterTypes::BugContest)
+          ret = EncounterTypes::BugContest
+        end
       end
     end
-    # Return the chosen species and level
-    encounter = encList[chosenPkmn]
-    level     = encounter[1]+rand(1+encounter[2]-encounter[1])
-    return [encounter[0],level]
+    return ret
   end
 
-  # Determines the species and level of the Pokémon to be encountered on the
-  # current map, given the encounter type. May return nil if the given encounter
-  # type has no encounters defined for it for the current map.
-  def pbEncounteredPokemon(enctype,tries=1)
-    if enctype<0 || enctype>EncounterTypes::EnctypeChances.length
+  #=============================================================================
+
+  # For the current map, randomly chooses a species and level from the encounter
+  # list for the given encounter type. Returns nil if there are none defined.
+  # A higher chance_rolls makes this method prefer rarer encounter slots.
+  def choose_wild_pokemon(enc_type, chance_rolls = 1)
+    if enc_type < 0 || enc_type > EncounterTypes::Probabilities.length
       raise ArgumentError.new(_INTL("Encounter type out of range"))
     end
-    # Get the encounter table
-    encList = pbGetEncounterTable(enctype)
-    return nil if encList==nil
-    chances = EncounterTypes::EnctypeChances[enctype]
+    enc_list = @encounter_tables[enc_type]
+    return nil if !enc_list || enc_list.length == 0
     # Static/Magnet Pull prefer wild encounters of certain types, if possible.
     # If they activate, they remove all Pokémon from the encounter table that do
     # not have the type they favor. If none have that type, nothing is changed.
-    firstPkmn = $Trainer.firstPokemon
-    if firstPkmn && rand(100)<50   # 50% chance of happening
-      favoredType = -1
-      if isConst?(firstPkmn.ability,PBAbilities,:STATIC) && hasConst?(PBTypes,:ELECTRIC)
-        favoredType = getConst(PBTypes,:ELECTRIC)
-      elsif isConst?(firstPkmn.ability,PBAbilities,:MAGNETPULL) && hasConst?(PBTypes,:STEEL)
-        favoredType = getConst(PBTypes,:STEEL)
-      elsif isConst?(firstPkmn.ability,PBAbilities,:FLASHFIRE) && hasConst?(PBTypes,:FIRE)
-        favoredType = getConst(PBTypes,:FIRE)
-      elsif isConst?(firstPkmn.ability,PBAbilities,:HARVEST) && hasConst?(PBTypes,:GRASS)
-        favoredType = getConst(PBTypes,:GRASS)
-      elsif isConst?(firstPkmn.ability,PBAbilities,:LIGHTNINGROD) && hasConst?(PBTypes,:ELECTRIC)
-        favoredType = getConst(PBTypes,:ELECTRIC)
-      elsif isConst?(firstPkmn.ability,PBAbilities,:STORMDRAIN) && hasConst?(PBTypes,:WATER)
-        favoredType = getConst(PBTypes,:WATER)
+    first_pkmn = $Trainer.first_pokemon
+    if first_pkmn
+      favored_type = nil
+      case first_pkmn.ability_id
+      when :STATIC
+        favored_type = :ELECTRIC if GameData::Type.exists?(:ELECTRIC) && rand(100) < 50
+      when :MAGNETPULL
+        favored_type = :STEEL if GameData::Type.exists?(:STEEL) && rand(100) < 50
+      when :FLASHFIRE
+        favored_type = :FIRE if GameData::Type.exists?(:FIRE) && rand(100) < 50
+      when :HARVEST
+        favored_type = :GRASS if GameData::Type.exists?(:GRASS) && rand(100) < 50
+      when :LIGHTNINGROD
+        favored_type = :ELECTRIC if GameData::Type.exists?(:ELECTRIC) && rand(100) < 50
+      when :STORMDRAIN
+        favored_type = :WATER if GameData::Type.exists?(:WATER) && rand(100) < 50
       end
-      if favoredType>=0
-        newEncList = []
-        newChances = []
-        speciesData = pbLoadSpeciesData
-        for i in 0...encList.length
-          t1 = speciesData[encList[i][0]][SpeciesType1]
-          t2 = speciesData[encList[i][0]][SpeciesType2]
-          next if t1!=favoredType && (!t2 || t2!=favoredType)
-          newEncList.push(encList[i])
-          newChances.push(chances[i])
+      if favored_type
+        new_enc_list = []
+        enc_list.each do |enc|
+          species_data = GameData::Species.get(enc[0])
+          t1 = species_data.type1
+          t2 = species_data.type2
+          new_enc_list.push(enc) if t1 == favored_type || t2 == favored_type
         end
-        if newEncList.length>0
-          encList = newEncList
-          chances = newChances
-        end
+        enc_list = new_enc_list if new_enc_list.length > 0
       end
     end
+    enc_list.sort! { |a, b| b[0] <=> a[0] }   # Highest probability first
     # Calculate the total probability value
-    chanceTotal = 0
-    chances.each { |a| chanceTotal += a }
-    # Choose a random entry in the encounter table based on entry weights
+    chance_total = 0
+    enc_list.each { |a| chance_total += a[0] }
+    # Choose a random entry in the encounter table based on entry probabilities
     rnd = 0
-    tries.times do
-      r = rand(chanceTotal)
-      rnd = r if rnd<r
+    chance_rolls.times do
+      r = rand(chance_total)
+      rnd = r if r > rnd   # Prefer rarer entries if rolling repeatedly
     end
-    chance = 0
-    chosenPkmn = 0   # Index of the chosen entry
-    for i in 0...chances.length
-      chance += chances[i]
-      if rnd<chance
-        chosenPkmn = i
-        break
-      end
+    encounter = nil
+    enc_list.each do |enc|
+      rnd -= enc[0]
+      next if rnd >= 0
+      encounter = enc
+      break
     end
     # Get the chosen species and level
-    encounter = encList[chosenPkmn]
-    return nil if !encounter
-    level = encounter[1]+rand(1+encounter[2]-encounter[1])
+    level = rand(encounter[2]..encounter[3])
     # Some abilities alter the level of the wild Pokémon
-    if firstPkmn && rand(100)<50   # 50% chance of happening
-      if isConst?(firstPkmn.ability,PBAbilities,:HUSTLE) ||
-         isConst?(firstPkmn.ability,PBAbilities,:VITALSPIRIT) ||
-         isConst?(firstPkmn.ability,PBAbilities,:PRESSURE)
-        level2 = encounter[1]+rand(1+encounter[2]-encounter[1])
-        level = level2 if level2>level   # Higher level is more likely
+    if first_pkmn
+      case first_pkmn.ability_id
+      when :HUSTLE, :PRESSURE, :VITALSPIRIT
+        level = encounter[3] if rand(100) < 50   # Highest possible level
       end
     end
     # Black Flute and White Flute alter the level of the wild Pokémon
-    if NEWEST_BATTLE_MECHANICS
+    if Settings::FLUTES_CHANGE_WILD_ENCOUNTER_LEVELS
       if $PokemonMap.blackFluteUsed
-        level = [level+1+rand(3),PBExperience.maxLevel].min
+        level = [level + rand(1..4), PBExperience.maxLevel].min
       elsif $PokemonMap.whiteFluteUsed
-        level = [level-1-rand(3),1].max
+        level = [level - rand(1..4), 1].max
       end
     end
     # Return [species, level]
-    return [encounter[0],level]
+    return [encounter[1], level]
   end
 
-  # Returns the encountered Pokémon's species/level, taking into account factors
-  # that alter the probability of an encounter (cycling, Flutes, lead party
-  # Pokémon's item/ability).
-  def pbGenerateEncounter(enctype)
-    if enctype<0 || enctype>EncounterTypes::EnctypeChances.length
+  # For the given map, randomly chooses a species and level from the encounter
+  # list for the given encounter type. Returns nil if there are none defined.
+  # Used by the Bug Catching Contest to choose what the other participants
+  # caught.
+  def choose_wild_pokemon_for_map(map_ID, enc_type)
+    if enc_type < 0 || enc_type > EncounterTypes::Probabilities.length
       raise ArgumentError.new(_INTL("Encounter type out of range"))
     end
-    # Check if an encounter table is defined
-    return nil if @density==nil
-    return nil if @density[enctype]==0 || !@density[enctype]
-    return nil if @enctypes[enctype]==nil
-    # Wild encounters cannot happen for the first 3 steps after a previous wild
-    # encounter
-    @stepcount += 1
-    return nil if @stepcount<=3
-    # Determine the encounter density (probability of a wild encounter
-    # happening). The actual probability is the written encounter density, with
-    # modifiers applied, divided by 180 (numbers are multiplied by 16 below to
-    # increase precision).
-    encount = @density[enctype]*16
-    encount = encount*0.8 if $PokemonGlobal.bicycle
-    if !NEWEST_BATTLE_MECHANICS
-      if $PokemonMap.blackFluteUsed
-        encount = encount/2
-      elsif $PokemonMap.whiteFluteUsed
-        encount = encount*1.5
-      end
+    # Get the encounter table
+    encounter_data = GameData::Encounter.get(map_ID, $PokemonGlobal.encounter_version)
+    return nil if !encounter_data
+    enc_list = encounter_data.types[enc_type]
+    return nil if !enc_list || enc_list.length == 0
+    # Calculate the total probability value
+    chance_total = 0
+    enc_list.each { |a| chance_total += a[0] }
+    # Choose a random entry in the encounter table based on entry probabilities
+    rnd = 0
+    chance_rolls.times do
+      r = rand(chance_total)
+      rnd = r if r > rnd   # Prefer rarer entries if rolling repeatedly
     end
-    firstPkmn = $Trainer.firstPokemon
-    if firstPkmn
-      if firstPkmn.hasItem?(:CLEANSETAG)
-        encount = encount*2/3
-      elsif firstPkmn.hasItem?(:PUREINCENSE)
-        encount = encount*2/3
-      else   # Ignore ability effects if an item effect applies
-        if isConst?(firstPkmn.ability,PBAbilities,:STENCH)
-          encount = encount/2
-        elsif isConst?(firstPkmn.ability,PBAbilities,:WHITESMOKE)
-          encount = encount/2
-        elsif isConst?(firstPkmn.ability,PBAbilities,:QUICKFEET)
-          encount = encount/2
-        elsif isConst?(firstPkmn.ability,PBAbilities,:SNOWCLOAK)
-          encount = encount/2 if $game_screen.weather_type==PBFieldWeather::Snow ||
-                                 $game_screen.weather_type==PBFieldWeather::Blizzard
-        elsif isConst?(firstPkmn.ability,PBAbilities,:SANDVEIL)
-          encount = encount/2 if $game_screen.weather_type==PBFieldWeather::Sandstorm
-        elsif isConst?(firstPkmn.ability,PBAbilities,:SWARM)
-          encount = encount*1.5
-        elsif isConst?(firstPkmn.ability,PBAbilities,:ILLUMINATE)
-          encount = encount*2
-        elsif isConst?(firstPkmn.ability,PBAbilities,:ARENATRAP)
-          encount = encount*2
-        elsif isConst?(firstPkmn.ability,PBAbilities,:NOGUARD)
-          encount = encount*2
-        end
-      end
+    encounter = nil
+    enc_list.each do |enc|
+      rnd -= enc[0]
+      next if rnd >= 0
+      encounter = enc
+      break
     end
-    # Decide whether the wild encounter should actually happen
-    return nil if rand(180*16)>=encount
-    # A wild encounter will happen; choose a species and level for it
-    encPkmn = pbEncounteredPokemon(enctype)
-    return nil if !encPkmn
-    # Some abilities make wild encounters less likely if the wild Pokémon is
-    # sufficiently weaker than the Pokémon with the ability
-    if firstPkmn && rand(100)<50   # 50% chance of happening
-      if isConst?(firstPkmn.ability,PBAbilities,:INTIMIDATE) ||
-         isConst?(firstPkmn.ability,PBAbilities,:KEENEYE)
-        return nil if encPkmn[1]<=firstPkmn.level-5   # 5 or more levels weaker
-      end
-    end
-    return encPkmn
-  end
-
-  # Returns whether it is possible to have an encounter, based on some factors
-  # that would prevent it (holding Ctrl in Debug mode, Repels).
-  def pbCanEncounter?(encounter,repel)
-    return false if $game_system.encounter_disabled
-    return false if !encounter || !$Trainer
-    return false if $DEBUG && Input.press?(Input::CTRL)
-    if !pbPokeRadarOnShakingGrass
-      if $PokemonGlobal.repel>0 || repel
-        firstPkmn = (NEWEST_BATTLE_MECHANICS) ? $Trainer.firstPokemon : $Trainer.firstAblePokemon
-        return false if firstPkmn && encounter[1]<firstPkmn.level
-      end
-    end
-    return true
+    # Return [species, level]
+    level = rand(encounter[2]..encounter[3])
+    return [encounter[1], level]
   end
 end
 
@@ -410,45 +459,45 @@ end
 #===============================================================================
 #
 #===============================================================================
-# Returns a Pokémon generated by a wild encounter, given its species and level.
+# Creates and returns a Pokémon based on the given species and level.
+# Applies wild Pokémon modifiers (wild held item, shiny chance modifiers,
+# Pokérus, gender/nature forcing because of player's lead Pokémon).
 def pbGenerateWildPokemon(species,level,isRoamer=false)
-  genwildpoke = pbNewPkmn(species,level)
+  genwildpoke = Pokemon.new(species,level)
   # Give the wild Pokémon a held item
   items = genwildpoke.wildHoldItems
-  firstPkmn = $Trainer.firstPokemon
+  first_pkmn = $Trainer.first_pokemon
   chances = [50,5,1]
   chances = [60,20,5] if firstPkmn && isConst?(firstPkmn.ability,PBAbilities,:COMPOUNDEYES)
   chances = [50,50,50] if firstPkmn && isConst?(firstPkmn.ability,PBAbilities,:SUPERLUCK)
   itemrnd = rand(100)
   if (items[0]==items[1] && items[1]==items[2]) || itemrnd<chances[0]
-    genwildpoke.setItem(items[0])
+    genwildpoke.item = items[0]
   elsif itemrnd<(chances[0]+chances[1])
-    genwildpoke.setItem(items[1])
+    genwildpoke.item = items[1]
   elsif itemrnd<(chances[0]+chances[1]+chances[2])
-    genwildpoke.setItem(items[2])
+    genwildpoke.item = items[2]
   end
   # Shiny Charm makes shiny Pokémon more likely to generate
-  if hasConst?(PBItems,:SHINYCHARM) && $PokemonBag.pbHasItem?(:SHINYCHARM)
+  if GameData::Item.exists?(:SHINYCHARM) && $PokemonBag.pbHasItem?(:SHINYCHARM)
     2.times do   # 3 times as likely
       break if genwildpoke.shiny?
-      genwildpoke.personalID = rand(65536)|(rand(65536)<<16)
+      genwildpoke.personalID = rand(2**16) | rand(2**16) << 16
     end
   end
   # Give Pokérus
-  if rand(65536)<POKERUS_CHANCE
-    genwildpoke.givePokerus
-  end
+  genwildpoke.givePokerus if rand(65536) < Settings::POKERUS_CHANCE
   # Change wild Pokémon's gender/nature depending on the lead party Pokémon's
   # ability
-  if firstPkmn
-    if isConst?(firstPkmn.ability,PBAbilities,:CUTECHARM) && !genwildpoke.singleGendered?
-      if firstPkmn.male?
+  if first_pkmn
+    if first_pkmn.hasAbility?(:CUTECHARM) && !genwildpoke.singleGendered?
+      if first_pkmn.male?
         (rand(3)<2) ? genwildpoke.makeFemale : genwildpoke.makeMale
-      elsif firstPkmn.female?
+      elsif first_pkmn.female?
         (rand(3)<2) ? genwildpoke.makeMale : genwildpoke.makeFemale
       end
-    elsif isConst?(firstPkmn.ability,PBAbilities,:SYNCHRONIZE)
-      genwildpoke.setNature(firstPkmn.nature) if !isRoamer
+    elsif first_pkmn.hasAbility?(:SYNCHRONIZE)
+      genwildpoke.nature = first_pkmn.nature if !isRoamer && rand(100)<50
     end
   end
   # Trigger events that may alter the generated Pokémon further
@@ -457,20 +506,22 @@ def pbGenerateWildPokemon(species,level,isRoamer=false)
 end
 
 # Used by fishing rods and Headbutt/Rock Smash/Sweet Scent. Skips the
-# probability checks in def pbGenerateEncounter above.
-def pbEncounter(enctype)
-  $PokemonTemp.encounterType = enctype
-  encounter1 = $PokemonEncounters.pbEncounteredPokemon(enctype)
+# probability checks in def step_triggers_encounter? above.
+def pbEncounter(enc_type)
+  $PokemonTemp.encounterType = enc_type
+  encounter1 = $PokemonEncounters.choose_wild_pokemon(enc_type)
   encounter1 = EncounterModifier.trigger(encounter1)
   return false if !encounter1
-  if $PokemonGlobal.partner
-    encounter2 = $PokemonEncounters.pbEncounteredPokemon(enctype)
+  if $PokemonEncounters.have_double_wild_battle?
+    encounter2 = $PokemonEncounters.choose_wild_pokemon(enc_type)
     encounter2 = EncounterModifier.trigger(encounter2)
     return false if !encounter2
-    pbDoubleWildBattle(encounter1[0],encounter1[1],encounter2[0],encounter2[1])
+    pbDoubleWildBattle(encounter1[0], encounter1[1], encounter2[0], encounter2[1])
   else
-    pbWildBattle(encounter1[0],encounter1[1])
+    pbWildBattle(encounter1[0], encounter1[1])
   end
 	$PokemonTemp.encounterType = -1
+  $PokemonTemp.forceSingleBattle = false
+  EncounterModifier.triggerEncounterEnd
   return true
 end

@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class PokemonLoadPanel < SpriteWrapper
   attr_reader :selected
 
@@ -61,9 +64,9 @@ class PokemonLoadPanel < SpriteWrapper
       if @isContinue
         textpos.push([@title,16*2,5*2,0,TEXTCOLOR,TEXTSHADOWCOLOR])
         textpos.push([_INTL("Badges:"),16*2,56*2,0,TEXTCOLOR,TEXTSHADOWCOLOR])
-        textpos.push([@trainer.numbadges.to_s,103*2,56*2,1,TEXTCOLOR,TEXTSHADOWCOLOR])
+        textpos.push([@trainer.badge_count.to_s,103*2,56*2,1,TEXTCOLOR,TEXTSHADOWCOLOR])
         textpos.push([_INTL("Pokédex:"),16*2,72*2,0,TEXTCOLOR,TEXTSHADOWCOLOR])
-        textpos.push([@trainer.pokedexSeen.to_s,103*2,72*2,1,TEXTCOLOR,TEXTSHADOWCOLOR])
+        textpos.push([@trainer.seen_count.to_s,103*2,72*2,1,TEXTCOLOR,TEXTSHADOWCOLOR])
         textpos.push([_INTL("Time:"),16*2,88*2,0,TEXTCOLOR,TEXTSHADOWCOLOR])
         hour = @totalsec / 60 / 60
         min  = @totalsec / 60 % 60
@@ -91,8 +94,9 @@ class PokemonLoadPanel < SpriteWrapper
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonLoad_Scene
   def pbStartScene(commands,showContinue,trainer,framecount,mapid)
     @commands = commands
@@ -159,7 +163,7 @@ class PokemonLoad_Scene
 
   def pbSetParty(trainer)
     return if !trainer || !trainer.party
-    meta = pbGetMetadata(0,MetadataPlayerA+trainer.metaID)
+    meta = GameData::Metadata.get_player(trainer.character_ID)
     if meta
       filename = pbGetPlayerCharset(meta,1,trainer,true)
       @sprites["player"] = TrainerWalkingCharSprite.new(filename,@viewport)
@@ -202,8 +206,9 @@ class PokemonLoad_Scene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonLoadScreen
   def initialize(scene)
     @scene = scene
@@ -222,7 +227,7 @@ class PokemonLoadScreen
       pokemonSystem = Marshal.load(f)
       mapid         = Marshal.load(f)
     }
-    raise "Corrupted file" if !trainer.is_a?(PokeBattle_Trainer)
+    raise "Corrupted file" if !trainer.is_a?(PlayerTrainer)
     raise "Corrupted file" if !framecount.is_a?(Numeric)
     raise "Corrupted file" if !game_system.is_a?(Game_System)
     raise "Corrupted file" if !pokemonSystem.is_a?(PokemonSystem)
@@ -257,11 +262,8 @@ class PokemonLoadScreen
     $game_system   = Game_System.new
     $PokemonSystem = PokemonSystem.new if !$PokemonSystem
     savefile = RTP.getSaveFileName("Game.rxdata")
-    FontInstaller.install
-    data_system = pbLoadRxData("Data/System")
-    mapfile = ($RPGVX) ? sprintf("Data/Map%03d.rvdata",data_system.start_map_id) :
-                         sprintf("Data/Map%03d.rxdata",data_system.start_map_id)
-    if data_system.start_map_id==0 || !pbRgssExists?(mapfile)
+    mapfile = sprintf("Data/Map%03d.rxdata", $data_system.start_map_id)
+    if $data_system.start_map_id == 0 || !pbRgssExists?(mapfile)
       pbMessage(_INTL("No starting position was set in the map editor.\1"))
       pbMessage(_INTL("The game cannot continue."))
       @scene.pbEndScene
@@ -316,12 +318,12 @@ class PokemonLoadScreen
       end
       commands[cmdContinue = commands.length]    = _INTL("Continue") if showContinue
       commands[cmdNewGame = commands.length]     = _INTL("New Game")
-      commands[cmdMysteryGift = commands.length] = _INTL("Mystery Gift") if (trainer.mysterygiftaccess rescue false)
+      commands[cmdMysteryGift = commands.length] = _INTL("Mystery Gift") if trainer.mystery_gift_unlocked
     else
       commands[cmdNewGame = commands.length]     = _INTL("New Game")
     end
     commands[cmdOption = commands.length]        = _INTL("Options")
-    commands[cmdLanguage = commands.length]      = _INTL("Language") if LANGUAGES.length>=2
+    commands[cmdLanguage = commands.length]      = _INTL("Language") if Settings::LANGUAGES.length>=2
     commands[cmdDebug = commands.length]         = _INTL("Debug") if $DEBUG
     commands[cmdQuit = commands.length]          = _INTL("Quit Game")
     @scene.pbStartScene(commands,showContinue,trainer,framecount,mapid)
@@ -357,7 +359,6 @@ class PokemonLoadScreen
           $PokemonBag          = Marshal.load(f)
           $PokemonStorage      = Marshal.load(f)
           $SaveVersion         = Marshal.load(f) unless f.eof?
-          pbRefreshResizeFactor   # To fix Game_Screen pictures
           magicNumberMatches = false
           if $data_system.respond_to?("magic_number")
             magicNumberMatches = ($game_system.magic_number==$data_system.magic_number)
@@ -429,8 +430,6 @@ class PokemonLoadScreen
         $PokemonStorage      = PokemonStorage.new
         $PokemonEncounters   = PokemonEncounters.new
         $PokemonTemp.begunNewGame = true
-        pbRefreshResizeFactor   # To fix Game_Screen pictures
-        $data_system         = pbLoadRxData("Data/System")
         $MapFactory          = PokemonMapFactory.new($data_system.start_map_id)   # calls setMapChanged
         $game_player.moveto($data_system.start_x, $data_system.start_y)
         $game_player.refresh
@@ -453,7 +452,7 @@ class PokemonLoadScreen
         pbPlayDecisionSE
         @scene.pbEndScene
         $PokemonSystem.language = pbChooseLanguage
-        pbLoadMessages("Data/"+LANGUAGES[$PokemonSystem.language][1])
+        pbLoadMessages("Data/"+Settings::LANGUAGES[$PokemonSystem.language][1])
         savedata = []
         if safeExists?(savefile)
           File.open(savefile,"rb") { |f|
@@ -478,149 +477,6 @@ class PokemonLoadScreen
         $scene = nil
         return
       end
-    end
-  end
-end
-
-
-
-################################################################################
-# Font installer
-################################################################################
-module FontInstaller
-  # filenames of fonts to be installed
-  Filenames = [
-     'pkmnem.ttf',
-     'pkmnemn.ttf',
-     'pkmnems.ttf',
-     'pkmnrs.ttf',
-     'pkmndp.ttf',
-     'pkmnfl.ttf'
-  ]
-  # names (not filenames) of fonts to be installed
-  Names = [
-    'Power Green',
-    'Power Green Narrow',
-    'Power Green Small',
-    'Power Red and Blue',
-    'Power Clear',
-    'Power Red and Green'
-  ]
-  # whether to notify player (via pop-up message) that fonts were installed
-  Notify = true
-  # location of fonts (relative to game folder)
-  Source = 'Fonts/'
-
-  def self.getFontFolder
-    fontfolder = MiniRegistry.get(MiniRegistry::HKEY_CURRENT_USER,
-       "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders","Fonts")
-    return fontfolder+"\\" if fontfolder
-    if ENV['SystemRoot']
-      return ENV['SystemRoot'] + '\\Fonts\\'
-    elsif ENV['windir']
-      return ENV['windir'] + '\\Fonts\\'
-    else
-      return '\\Windows\\Fonts\\'
-    end
-  end
-
-  AFR = Win32API.new('gdi32', 'AddFontResource', ['P'], 'L')
-  WPS = Win32API.new('kernel32', 'WriteProfileString', ['P'] * 3, 'L')
-  SM  = Win32API.new('user32', 'PostMessage', ['L'] * 4, 'L')
-  WM_FONTCHANGE = 0x001D
-  HWND_BROADCAST = 0xffff
-
-  def self.copy_file(src,dest)
-    File.open(src,'rb') { |r|
-      File.open(dest,'wb') { |w|
-        while s = r.read(4096)
-          w.write s
-        end
-      }
-    }
-  end
-
-  def self.pbResolveFont(name)
-    RTP.eachPathFor(Source+name) { |file|
-      return file if safeExists?(file)
-    }
-    return Source+name
-  end
-
-  def self.install
-    success = []
-    # Check if all fonts already exist
-    filesExist = true
-    dest = self.getFontFolder
-    for i in 0...Names.size
-      filesExist = false if !safeExists?(dest + Filenames[i])
-    end
-    return if filesExist
-    # Check if all source fonts exist
-    exist = true
-    for i in 0...Names.size
-      if !RTP.exists?(Source + Filenames[i])
-        exist = false
-        break
-      end
-    end
-    return if !exist # Exit if not all source fonts exist
-    pbMessage(_INTL("One or more fonts used in this game do not exist on the system.\1"))
-    pbMessage(_INTL("The game can be played, but the look of the game's text will not be optimal."))
-    failed = false
-    for i in 0...Filenames.size
-      f = Filenames[i]
-      if safeExists?(dest + f) && !Font.exist?(Names[i])
-        File.delete(dest + f) rescue nil
-      end
-      # check if already installed...
-      if not safeExists?(dest + f)
-        # check to ensure font is in specified location...
-        if RTP.exists?(Source + f)
-          # copy file to fonts folder
-          succeeded = false
-          begin
-            copy_file(pbResolveFont(f), dest + f)
-            # add font resource
-            AFR.call(dest + f)
-            # add entry to win.ini/registry
-            WPS.call('Fonts', Names[i] + ' (TrueType)', f)
-            succeeded = safeExists?(dest + f)
-          rescue SystemCallError
-            # failed
-            succeeded = false
-          end
-          if succeeded
-            success.push(Names[i])
-          else
-            failed = true
-          end
-        end
-      else
-        success.push(Names[i]) # assume success
-      end
-    end
-    if success.length>0 # one or more fonts successfully installed
-      SM.call(HWND_BROADCAST,WM_FONTCHANGE,0,0)
-      if Notify
-        fonts = ''
-        success.each do |f|
-          fonts << f << ', '
-        end
-        if failed
-          pbMessage(_INTL("Some of the fonts were successfully installed.\1"))
-          pbMessage(_INTL("To install the other fonts, copy the files in this game's Fonts folder to the Fonts folder in Control Panel.\1"))
-        else
-          pbMessage(_INTL("The fonts were successfully installed.\1"))
-        end
-        if pbConfirmMessage(_INTL("Would you like to restart the game and apply the changes?"))
-          a = Thread.new { system('Game') }
-          exit
-        end
-      end
-    else
-      # No fonts were installed.
-      pbMessage(_INTL("To install the necessary fonts, copy the files in this game's Fonts folder to the Fonts folder in Control Panel."))
     end
   end
 end

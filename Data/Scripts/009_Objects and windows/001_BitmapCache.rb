@@ -21,10 +21,8 @@ def canonicalize(c)
   for x in csplit
     if x=="."
     elsif x==".."
-      if pos>=0
-        ret.delete_at(pos)
-        pos -= 1
-      end
+      ret.delete_at(pos) if pos>=0
+      pos -= 1
     else
       ret.push(x)
       pos += 1
@@ -43,27 +41,19 @@ end
 class WeakRef
   @@id_map =  {}
   @@id_rev_map =  {}
-  @@final = lambda { |id|
-    old_thread_status = Thread.critical
-    Thread.critical = true
-    begin
-      rids = @@id_map[id]
-      if rids
-	      for rid in rids
-	        @@id_rev_map.delete(rid)
-        end
-        @@id_map.delete(id)
-      end
-      rid = @@id_rev_map[id]
-      if rid
-	      @@id_rev_map.delete(id)
-	      @@id_map[rid].delete(id)
-	      @@id_map.delete(rid) if @@id_map[rid].empty?
-      end
-    ensure
-      Thread.critical = old_thread_status
+  @@final = lambda do |id|
+    rids = @@id_map[id]
+    if rids
+      rids.each { |rid| @@id_rev_map.delete(rid) }
+      @@id_map.delete(id)
     end
-  }
+    rid = @@id_rev_map[id]
+    if rid
+      @@id_rev_map.delete(id)
+      @@id_map[rid].delete(id)
+      @@id_map.delete(rid) if @@id_map[rid].empty?
+    end
+  end
 
   # Create a new WeakRef from +orig+.
   def initialize(orig)
@@ -83,17 +73,11 @@ class WeakRef
 
   def __setobj__(obj)
     @__id = obj.__id__
-    old_thread_status = Thread.critical
-    begin
-      Thread.critical = true
-      unless @@id_rev_map.key?(self)
-        ObjectSpace.define_finalizer obj, @@final
-        ObjectSpace.define_finalizer self, @@final
-      end
-      @@id_map[@__id] = [] unless @@id_map[@__id]
-    ensure
-      Thread.critical = old_thread_status
+    unless @@id_rev_map.key?(self)
+      ObjectSpace.define_finalizer obj, @@final
+      ObjectSpace.define_finalizer self, @@final
     end
+    @@id_map[@__id] = [] unless @@id_map[@__id]
     @@id_map[@__id].push self.__id__
     @@id_rev_map[self.__id__] = @__id
   end
@@ -272,57 +256,24 @@ end
 
 
 
-# A safer version of RPG::Cache, this module loads bitmaps that keep an internal
-# reference count.  Each call to dispose decrements the reference count and the
-# bitmap is freed when the reference count reaches 0.
-class Thread
-  def Thread.exclusive
-    old_thread_status = Thread.critical
-    begin
-      Thread.critical = true
-      return yield
-    ensure
-      Thread.critical = old_thread_status
-    end
-  end
-end
-
-
-
 class BitmapWrapper < Bitmap
+  attr_reader :refcount
+
   @@disposedBitmaps={}
   @@keys={}
-=begin
-  @@final = lambda { |id|
-    Thread.exclusive {
-      if @@disposedBitmaps[id]!=true
-        File.open("debug.txt","ab") { |f|
-          f.write("Bitmap finalized without being disposed: #{@@keys[id]}\r\n")
-        }
-      end
-      @@disposedBitmaps[id]=nil
-    }
-  }
-=end
-  attr_reader :refcount
 
   def dispose
     return if self.disposed?
     @refcount-=1
-    if @refcount==0
-      super
-      #Thread.exclusive { @@disposedBitmaps[__id__]=true }
-    end
+    super if @refcount==0
   end
 
   def initialize(*arg)
     super
     @refcount=1
-    #Thread.exclusive { @@keys[__id__]=arg.inspect+caller(1).inspect }
-    #ObjectSpace.define_finalizer(self,@@final)
   end
 
-  def resetRef # internal
+  def resetRef
     @refcount=1
   end
 

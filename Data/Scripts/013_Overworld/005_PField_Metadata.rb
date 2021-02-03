@@ -46,6 +46,7 @@ class PokemonGlobalMetadata
   attr_writer   :bridge
   attr_accessor :repel
   attr_accessor :flashUsed
+  attr_accessor :encounter_version
   # Map transfers
   attr_accessor :healingSpot
   attr_accessor :escapePoint
@@ -111,6 +112,7 @@ class PokemonGlobalMetadata
     @bridge               = 0
     @repel                = 0
     @flashused            = false
+    @encounter_version    = 0
     # Map transfers
     @healingSpot          = nil
     @escapePoint          = []
@@ -182,10 +184,10 @@ class PokemonMapMetadata
         next if !$game_map.events[i[0][1]]
         $game_map.events[i[0][1]].moveto(i[1][0],i[1][1])
         case i[1][2]
-        when 2; $game_map.events[i[0][1]].turn_down
-        when 4; $game_map.events[i[0][1]].turn_left
-        when 6; $game_map.events[i[0][1]].turn_right
-        when 8; $game_map.events[i[0][1]].turn_up
+        when 2 then $game_map.events[i[0][1]].turn_down
+        when 4 then $game_map.events[i[0][1]].turn_left
+        when 6 then $game_map.events[i[0][1]].turn_right
+        when 8 then $game_map.events[i[0][1]].turn_up
         end
       end
       if i[1][3]!=nil

@@ -12,8 +12,7 @@ class IntroEventScene < EventScene
     @pic2 = addImage(0,0,"")   # flashing "Press Enter" picture
     @pic2.setOpacity(0,0)
     @index = 0
-    data_system = pbLoadRxData("Data/System")
-    pbBGMPlay(data_system.title_bgm)
+    pbBGMPlay($data_system.title_bgm)
     openPic(self,nil)
   end
 
@@ -67,8 +66,9 @@ class IntroEventScene < EventScene
     onUpdate.clear
     onCTrigger.clear
     # Play random cry
-    cry = pbCryFile(1+rand(PBSpecies.maxValue))
-    pbSEPlay(cry,80,100) if cry
+    species_keys = GameData::Species::DATA.keys
+    species_data = GameData::Species.get(species_keys[rand(species_keys.length)])
+    GameData::Species.play_cry_from_species(species_data.species, species_data.form)
     @pic.moveXY(0,20,0,0)
     pictureWait
     # Fade out
@@ -87,8 +87,9 @@ class IntroEventScene < EventScene
     onUpdate.clear
     onCTrigger.clear
     # Play random cry
-    cry = pbCryFile(1+rand(PBSpecies.maxValue))
-    pbSEPlay(cry,80,100) if cry
+    species_keys = GameData::Species::DATA.keys
+    species_data = GameData::Species.get(species_keys[rand(species_keys.length)])
+    GameData::Species.play_cry_from_species(species_data.species, species_data.form)
     @pic.moveXY(0,20,0,0)
     pictureWait
     # Fade out

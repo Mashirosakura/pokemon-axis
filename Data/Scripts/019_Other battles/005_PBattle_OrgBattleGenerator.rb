@@ -1,95 +1,70 @@
 def pbRandomMove
+  keys = GameData::Move::DATA.keys.sort
   loop do
-    move=rand(PBMoves.maxValue)+1
-    next if move>384 || isConst?(move,PBMoves,:SKETCH) || isConst?(move,PBMoves,:STRUGGLE)
-    return move if PBMoves.getName(move)!=""
+    move_id = keys[rand(keys.length)]
+    move = GameData::Move.get(move_id)
+    next if move.id_number > 384 || move.id == :SKETCH || move.id == :STRUGGLE
+    return move.id
   end
 end
 
 def addMove(moves,move,base)
-  data=moveData(move)
+  data=GameData::Move.get(move)
   count=base+1
-  if data.function=="000" && data.basedamage<=40
+  if data.function_code=="000" && data.base_damage<=40
     count=base
   end
-  if isConst?(move,PBMoves,:BUBBLE) ||
-     isConst?(move,PBMoves,:BUBBLEBEAM)
+  if [:BUBBLE, :BUBBLEBEAM].include?(data.id)
     count=0
     return
   end
-  if data.basedamage<=30 ||
-     isConst?(move,PBMoves,:GROWL) ||
-     isConst?(move,PBMoves,:TAILWHIP) ||
-     isConst?(move,PBMoves,:LEER)
+  if data.base_damage<=30 || [:GROWL, :TAILWHIP, :LEER].include?(data.id)
     count=base
   end
-  if data.basedamage>=60 ||
-     isConst?(move,PBMoves,:REFLECT) ||
-     isConst?(move,PBMoves,:LIGHTSCREEN) ||
-     isConst?(move,PBMoves,:SAFEGUARD) ||
-     isConst?(move,PBMoves,:SUBSTITUTE) ||
-     isConst?(move,PBMoves,:FAKEOUT)
+  if data.base_damage>=60 ||
+     [:REFLECT, :LIGHTSCREEN, :SAFEGUARD, :SUBSTITUTE, :FAKEOUT].include?(data.id)
     count=base+2
   end
-  if data.basedamage>=80 && isConst?(data.type,PBTypes,:NORMAL)
+  if data.base_damage >= 80 && data.type == :NORMAL
     count=base+5
   end
-  if data.basedamage>=80 && isConst?(data.type,PBTypes,:NORMAL)
+  if data.base_damage >= 80 && data.type == :NORMAL
     count=base+3
   end
-  if isConst?(move,PBMoves,:PROTECT) ||
-     isConst?(move,PBMoves,:DETECT) ||
-     isConst?(move,PBMoves,:TOXIC) ||
-     isConst?(move,PBMoves,:AERIALACE) ||
-     isConst?(move,PBMoves,:WILLOWISP) ||
-     isConst?(move,PBMoves,:SPORE) ||
-     isConst?(move,PBMoves,:THUNDERWAVE) ||
-     isConst?(move,PBMoves,:HYPNOSIS) ||
-     isConst?(move,PBMoves,:CONFUSERAY) ||
-     isConst?(move,PBMoves,:ENDURE) ||
-     isConst?(move,PBMoves,:SWORDSDANCE)
+  if [:PROTECT, :DETECT, :TOXIC, :AERIALACE, :WILLOWISP, :SPORE, :THUNDERWAVE,
+      :HYPNOSIS, :CONFUSERAY, :ENDURE, :SWORDSDANCE].include?(data.id)
     count=base+3
   end
-  if !moves.include?(move)
-    count.times{moves.push(move)}
+  if !moves.include?(move.id)
+    count.times { moves.push(move.id) }
   end
 end
 
-$legalMoves      = []
+$legalMoves      = {}
 $legalMovesLevel = 0
-$moveData        = []
-$baseStatTotal   = []
-$minimumLevel    = []
-$babySpecies     = []
-$evolutions      = []
+$baseStatTotal   = {}
+$minimumLevel    = {}
+$babySpecies     = {}
+$evolutions      = {}
 $tmMoves         = nil
 
 def pbGetLegalMoves2(species,maxlevel)
-  moves=[]
-  return moves if !species || species<=0
-  moveset = pbGetSpeciesMoveset(species)
-  moveset.each { |m| addMove(moves,m[1],2) if m[0]<=maxlevel }
-  tmData=pbLoadSpeciesTMData
+  species_data = GameData::Species.get(species)
+  moves = []
+  return moves if !species_data
+  # Populate available moves array (moves)
+  species_data.moves.each { |m| addMove(moves, m[1], 2) if m[0] <= maxlevel }
   if !$tmMoves
-    $tmMoves=[]
-    itemData=pbLoadItemsData
-    for i in 0...itemData.length
-      next if !itemData[i]
-      atk=itemData[i][8]
-      next if !atk || atk==0
-      next if !tmData[atk]
-      $tmMoves.push(atk)
-    end
+    $tmMoves = []
+    GameData::Item.each { |i| $tmMoves.push(i.move) if i.is_machine? }
   end
-  for atk in $tmMoves
-    addMove(moves,atk,0) if tmData[atk].include?(species)
-  end
+  species_data.tutor_moves.each { |m| addMove(moves, m, 0) if $tmMoves.include?(m) }
   babyspecies = babySpecies(species)
-  babyEggMoves = pbGetSpeciesEggMoves(babyspecies)
-  babyEggMoves.each { |m| addMove(moves,m,2) }
-  movedatas=[]
+  GameData::Species.get(babyspecies).egg_moves.each { |m| addMove(moves, m, 2) }
+  #
+  movedatas = []
   for move in moves
-    movedatas.push([move,moveData(move)])
+    movedatas.push([move, GameData::Move.get(move)])
   end
   # Delete less powerful moves
   deleteAll=proc { |a,item|
@@ -98,22 +73,22 @@ def pbGetLegalMoves2(species,maxlevel)
     end
   }
   for move in moves
-    md=moveData(move)
+    md=GameData::Move.get(move)
     for move2 in movedatas
-      if md.function=="0A5" && move2[1].function=="000" && md.type==move2[1].type &&
-         md.basedamage>=move2[1].basedamage
+      if md.function_code=="0A5" && move2[1].function_code=="000" &&
+         md.type==move2[1].type && md.base_damage>=move2[1].base_damage
         deleteAll.call(moves,move2[0])
-      elsif md.function==move2[1].function && md.basedamage==0 &&
+      elsif md.function_code==move2[1].function_code && md.base_damage==0 &&
          md.accuracy>move2[1].accuracy
         # Supersonic vs. Confuse Ray, etc.
         deleteAll.call(moves,move2[0])
-      elsif md.function=="006" && move2[1].function=="005"
+      elsif md.function_code=="006" && move2[1].function_code=="005"
         deleteAll.call(moves,move2[0])
-      elsif md.function==move2[1].function && md.basedamage!=0 &&
+      elsif md.function_code==move2[1].function_code && md.base_damage!=0 &&
          md.type==move2[1].type &&
-         (md.totalpp==15 || md.totalpp==10 || md.totalpp==move2[1].totalpp) &&
-         (md.basedamage>move2[1].basedamage ||
-         (md.basedamage==move2[1].basedamage && md.accuracy>move2[1].accuracy))
+         (md.total_pp==15 || md.total_pp==10 || md.total_pp==move2[1].total_pp) &&
+         (md.base_damage>move2[1].base_damage ||
+         (md.base_damage==move2[1].base_damage && md.accuracy>move2[1].accuracy))
         # Surf, Flamethrower, Thunderbolt, etc.
         deleteAll.call(moves,move2[0])
       end
@@ -122,39 +97,24 @@ def pbGetLegalMoves2(species,maxlevel)
   return moves
 end
 
-def baseStatTotal(move)
-  if !$baseStatTotal[move]
-    $baseStatTotal[move]=pbBaseStatTotal(move)
-  end
-  return $baseStatTotal[move]
+def baseStatTotal(species)
+  $baseStatTotal[species] = pbBaseStatTotal(species) if !$baseStatTotal[species]
+  return $baseStatTotal[species]
 end
 
-def babySpecies(move)
-  if !$babySpecies[move]
-    $babySpecies[move]=pbGetBabySpecies(move)
-  end
-  return $babySpecies[move]
+def babySpecies(species)
+  $babySpecies[species] = EvolutionHelper.baby_species(species) if !$babySpecies[species]
+  return $babySpecies[species]
 end
 
 def minimumLevel(move)
-  if !$minimumLevel[move]
-    $minimumLevel[move]=pbGetMinimumLevel(move)
-  end
-  return $minimumLevel[move]
+  $minimumLevel[species] = EvolutionHelper.minimum_level(species) if !$minimumLevel[species]
+  return $minimumLevel[species]
 end
 
-def evolutions(move)
-  if !$evolutions[move]
-    $evolutions[move]=pbGetEvolvedFormData(move,true)
-  end
-  return $evolutions[move]
-end
-
-def moveData(move)
-  if !$moveData[move]
-    $moveData[move]=PBMoveData.new(move)
-  end
-  return $moveData[move]
+def evolutions(species)
+  $evolutions[species] = EvolutionHelper.evolutions(species, true) if !$evolutions[species]
+  return $evolutions[species]
 end
 
 =begin
@@ -175,13 +135,14 @@ end
 
 
 class BaseStatRestriction
-  def initialize(mn,mx)
-    @mn=mn;@mx=mx
+  def initialize(mn, mx)
+    @mn = mn
+    @mx = mx
   end
 
   def isValid?(pkmn)
-    bst=baseStatTotal(pkmn.species)
-    return bst>=@mn && bst<=@mx
+    bst = baseStatTotal(pkmn.species)
+    return bst >= @mn && bst <= @mx
   end
 end
 
@@ -190,9 +151,7 @@ end
 class NonlegendaryRestriction
   def isValid?(pkmn)
     return true if !pkmn.genderless?
-    compatibility = pbGetSpeciesData(pkmn.species,pkmn.form,SpeciesCompatibility)
-    compatibility = [compatibility] if !compatibility.is_a?(Array)
-    compatibility.each { |c| return false if isConst?(c,PBEggGroups,:Undiscovered) }
+    return false if pkmn.species_data.egg_groups.include?(PBEggGroups::Undiscovered)
     return true
   end
 end
@@ -270,12 +229,12 @@ def pbArrangeByTier(pokemonlist,rule)
 end
 
 def hasMorePowerfulMove(moves,thismove)
-  thisdata=moveData(thismove)
-  return false if thisdata.basedamage==0
+  thisdata=GameData::Move.get(thismove)
+  return false if thisdata.base_damage==0
   for move in moves
-    next if move==0
-    if moveData(move).type==thisdata.type &&
-       moveData(move).basedamage>thisdata.basedamage
+    next if !move
+    moveData = GameData::Move.get(move)
+    if moveData.type==thisdata.type && moveData.base_damage>thisdata.base_damage
       return true
     end
   end
@@ -288,14 +247,13 @@ def pbRandomPokemonFromRule(rule,trainer)
   iteration=-1
   loop do
     iteration+=1
-    species=0
+    species=nil
     level=rule.ruleset.suggestedLevel
+    keys = GameData::Species::DATA.keys.sort
     loop do
-      species=0
       loop do
-        species=rand(PBSpecies.maxValue)+1
-        cname=getConstantName(PBSpecies,species) rescue nil
-        break if cname
+        species = keys[rand(keys.length)]
+        break if GameData::Species.get(species).form == 0
       end
       r=rand(20)
       bst=baseStatTotal(species)
@@ -312,22 +270,27 @@ def pbRandomPokemonFromRule(rule,trainer)
       break
     end
     ev=rand(63)+1
-    nature=0
+    nature = nil
+    keys = GameData::Nature::DATA.keys
     loop do
-      nature = rand(25)
-      nd5 = PBNatures.getStatRaised(nature)
-      nm5 = PBNatures.getStatLowered(nature)
-      if nd5==nm5 || nature==PBNatures::LAX || nature==PBNatures::GENTLE
-        # Neutral nature, Lax, or Gentle
-        next if rand(20)<19
+      nature = keys[rand(keys.length)]
+      nature_data = GameData::Nature.get(nature)
+      if [:LAX, :GENTLE].include?(nature_data.id) || nature_data.stat_changes.length == 0
+        next if rand(20) < 19
       else
-        next if rand(10)<6 if ((ev>>nd5)&1)==0   # If stat to increase isn't emphasized
-        next if rand(10)<9 if ((ev>>nm5)&1)!=0   # If stat to decrease is emphasized
+        raised_emphasis = false
+        lowered_emphasis = false
+        nature_data.stat_changes.each do |change|
+          raised_emphasis = true if change[1] > 0 && ((ev >> change[0]) & 1) != 0
+          lowered_emphasis = true if change[1] < 0 && ((ev >> change[0]) & 1) != 0
+        end
+        next if rand(10) < 6 && !raised_emphasis
+        next if rand(10) < 9 && lowered_emphasis
       end
       break
     end
-    item=0
-    $legalMoves=[] if level!=$legalMovesLevel
+    item = nil
+    $legalMoves={} if level!=$legalMovesLevel
     $legalMoves[species]=pbGetLegalMoves2(species,level) if !$legalMoves[species]
     itemlist=[
        :ORANBERRY,:SITRUSBERRY,:ADAMANTORB,:BABIRIBERRY,
@@ -343,96 +306,86 @@ def pbRandomPokemonFromRule(rule,trainer)
     # Most used: Leftovers, Life Orb, Choice Band, Choice Scarf, Focus Sash
     loop do
       if rand(40)==0
-        item=getID(PBItems,:LEFTOVERS)
+        item = :LEFTOVERS
         break
       end
-      itemsym=itemlist[rand(itemlist.length)]
-      item=getID(PBItems,itemsym)
-      next if item==0
-      case itemsym
+      item = itemlist[rand(itemlist.length)]
+      next if !item
+      case item
       when :LIGHTBALL
-        next if !isConst?(species,PBSpecies,:PIKACHU)
+        next if species != :PIKACHU
       when :SHEDSHELL
-        next if !isConst?(species,PBSpecies,:FORRETRESS) ||
-                !isConst?(species,PBSpecies,:SKARMORY)
+        next if species != :FORRETRESS && species != :SKARMORY
       when :SOULDEW
-        next if !isConst?(species,PBSpecies,:LATIOS) ||
-                !isConst?(species,PBSpecies,:LATIAS)
+        next if species != :LATIOS && species != :LATIAS
       when :FOCUSSASH
         next if baseStatTotal(species)>450 && rand(10)<8
       when :ADAMANTORB
-        next if !isConst?(species,PBSpecies,:DIALGA)
+        next if species != :DIALGA
       when :PASSHOBERRY
-        next if !isConst?(species,PBSpecies,:STEELIX)
+        next if species != :STEELIX
       when :BABIRIBERRY
-        next if !isConst?(species,PBSpecies,:TYRANITAR)
+        next if species != :TYRANITAR
       when :HABANBERRY
-        next if !isConst?(species,PBSpecies,:GARCHOMP)
+        next if species != :GARCHOMP
       when :OCCABERRY
-        next if !isConst?(species,PBSpecies,:METAGROSS)
+        next if species != :METAGROSS
       when :CHOPLEBERRY
-        next if !isConst?(species,PBSpecies,:UMBREON)
+        next if species != :UMBREON
       when :YACHEBERRY
-        next if !isConst?(species,PBSpecies,:TORTERRA) &&
-                !isConst?(species,PBSpecies,:GLISCOR) &&
-                !isConst?(species,PBSpecies,:DRAGONAIR)
+        next if species != :TORTERRA && species != :GLISCOR && species != :DRAGONAIR
       when :SHUCABERRY
-        next if !isConst?(species,PBSpecies,:HEATRAN)
+        next if species != :HEATRAN
       when :DEEPSEATOOTH
-        next if !isConst?(species,PBSpecies,:CLAMPERL)
+        next if species != :CLAMPERL
       when :THICKCLUB
-        next if !isConst?(species,PBSpecies,:CUBONE) &&
-                !isConst?(species,PBSpecies,:MAROWAK)
+        next if species != :CUBONE && species != :MAROWAK
       end
-      if itemsym==:LIECHIBERRY && (ev&0x02)==0
+      if item == :LIECHIBERRY && (ev&0x02)==0
         next if rand(2)==0
         ev|=0x02
       end
-      if itemsym==:SALACBERRY && (ev&0x08)==0
+      if item == :SALACBERRY && (ev&0x08)==0
         next if rand(2)==0
         ev|=0x08
       end
-      if itemsym==:PETAYABERRY && (ev&0x10)==0
+      if item == :PETAYABERRY && (ev&0x10)==0
         next if rand(2)==0
         ev|=0x10
       end
       break
     end
-    if level<10
-      item=(getConst(PBItems,:ORANBERRY) || item) if rand(40)==0 ||
-            isConst?(item,PBItems,:SITRUSBERRY)
-    end
-    if level>20
-      item=(getConst(PBItems,:SITRUSBERRY) || item) if rand(40)==0 ||
-            isConst?(item,PBItems,:ORANBERRY)
+    if level < 10 && GameData::Item.exists?(:ORANBERRY)
+      item = :ORANBERRY if rand(40) == 0 || item == :SITRUSBERRY
+    elsif level > 20 && GameData::Item.exists?(:SITRUSBERRY)
+      item = :SITRUSBERRY if rand(40) == 0 || item == :ORANBERRY
     end
     moves=$legalMoves[species]
     sketch=false
-    if isConst?(moves[0],PBMoves,:SKETCH)
+    if moves[0] == :SKETCH
       sketch=true
-      moves[0]=pbRandomMove
-      moves[1]=pbRandomMove
-      moves[2]=pbRandomMove
-      moves[3]=pbRandomMove
+      for i in 0...Pokemon::MAX_MOVES
+        moves[i]=pbRandomMove
+      end
     end
     next if moves.length==0
-    if (moves|[]).length<4
-      moves=[getID(PBMoves,:TACKLE)] if moves.length==0
+    if (moves|[]).length<Pokemon::MAX_MOVES
+      moves=[:TACKLE] if moves.length==0
       moves|=[]
     else
       newmoves=[]
-      rest=(getConst(PBMoves,:REST) || -1)
-      spitup=(getConst(PBMoves,:SPITUP) || -1)
-      swallow=(getConst(PBMoves,:SWALLOW) || -1)
-      stockpile=(getConst(PBMoves,:STOCKPILE) || -1)
-      snore=(getConst(PBMoves,:SNORE) || -1)
-      sleeptalk=(getConst(PBMoves,:SLEEPTALK) || -1)
+      rest=GameData::Move.exists?(:REST) ? :REST : nil
+      spitup=GameData::Move.exists?(:SPITUP) ? :SPITUP : nil
+      swallow=GameData::Move.exists?(:SWALLOW) ? :SWALLOW : nil
+      stockpile=GameData::Move.exists?(:STOCKPILE) ? :STOCKPILE : nil
+      snore=GameData::Move.exists?(:SNORE) ? :SNORE : nil
+      sleeptalk=GameData::Move.exists?(:SLEEPTALK) ? :SLEEPTALK : nil
       loop do
         newmoves.clear
-        while newmoves.length<4
+        while newmoves.length<[moves.length,Pokemon::MAX_MOVES].min
           m=moves[rand(moves.length)]
           next if rand(2)==0 && hasMorePowerfulMove(moves,m)
-          newmoves.push(m) if !newmoves.include?(m) && m!=0
+          newmoves.push(m) if m && !newmoves.include?(m)
         end
         if (newmoves.include?(spitup) ||
            newmoves.include?(swallow)) && !newmoves.include?(stockpile)
@@ -453,10 +406,10 @@ def pbRandomPokemonFromRule(rule,trainer)
         hasSpecial=false
         hasNormal=false
         for move in newmoves
-          d=moveData(move)
-          totalbasedamage+=d.basedamage
-          if d.basedamage>=1
-            hasNormal=true if isConst?(d.type,PBTypes,:NORMAL)
+          d=GameData::Move.get(move)
+          totalbasedamage+=d.base_damage
+          if d.base_damage>=1
+            hasNormal=true if d.type == :NORMAL
             hasPhysical=true if d.category==0
             hasSpecial=true if d.category==1
           end
@@ -483,43 +436,32 @@ def pbRandomPokemonFromRule(rule,trainer)
           ev|=0x10 if rand(10)<8 # Emphasize Special Attack
           ev&=~0x02 if rand(10)<8 # Deemphasize Attack
         end
-        if !hasNormal && isConst?(item,PBItems,:SILKSCARF)
-          item=getID(PBItems,:LEFTOVERS)
-        end
+        item = :LEFTOVERS if !hasNormal && item == :SILKSCARF
         moves=newmoves
         break
       end
     end
-    for i in 0...4
-      moves[i]=0 if !moves[i]
+    if item == :LIGHTCLAY && !moves.any? { |m| m == :LIGHTSCREEN || m = :REFLECT }
+      item = :LEFTOVERS
     end
-    if isConst?(item,PBItems,:LIGHTCLAY) &&
-       !moves.include?((getConst(PBMoves,:LIGHTSCREEN) || -1)) &&
-       !moves.include?((getConst(PBMoves,:REFLECT) || -1))
-      item=getID(PBItems,:LEFTOVERS)
+    if item == :BLACKSLUDGE
+      type1 = GameData::Species.get(species).type1
+      type2 = GameData::Species.get(species).type2 || type1
+      item = :LEFTOVERS if type1 != :POISON && type2 != :POISON
     end
-    if isConst?(item,PBItems,:BLACKSLUDGE)
-      type1 = pbGetSpeciesData(species,0,SpeciesType1)
-      type2 = pbGetSpeciesData(species,0,SpeciesType2) || type1
-      if !isConst?(type1,PBTypes,:POISON) && !isConst?(type2,PBTypes,:POISON)
-        item=getID(PBItems,:LEFTOVERS)
-      end
+    if item == :HEATROCK && !moves.any? { |m| m == :SUNNYDAY }
+      item = :LEFTOVERS
     end
-    if isConst?(item,PBItems,:HEATROCK) &&
-       !moves.include?((getConst(PBMoves,:SUNNYDAY) || -1))
-      item=getID(PBItems,:LEFTOVERS)
+    if item == :DAMPROCK && !moves.any? { |m| m == :RAINDANCE }
+      item = :LEFTOVERS
     end
-    if isConst?(item,PBItems,:DAMPROCK) &&
-       !moves.include?((getConst(PBMoves,:RAINDANCE) || -1))
-      item=getID(PBItems,:LEFTOVERS)
+    if moves.any? { |m| m == :REST }
+       item = :LUMBERRY if rand(3)==0
+       item = :CHESTOBERRY if rand(4)==0
     end
-    if moves.include?((getConst(PBMoves,:REST) || -1))
-       item=getID(PBItems,:LUMBERRY) if rand(3)==0
-       item=getID(PBItems,:CHESTOBERRY) if rand(4)==0
-    end
-    pk=PBPokemon.new(species,item,nature,moves[0],moves[1],moves[2],moves[3],ev)
-    pkmn=pk.createPokemon(level,31,trainer)
-    i+=1
+    pk = PBPokemon.new(species, item, nature, moves[0], moves[1], moves[2], moves[3], ev)
+    pkmn = pk.createPokemon(level, 31, trainer)
+    i += 1
     break if rule.ruleset.isPokemonValid?(pkmn)
   end
   return pkmn
@@ -831,26 +773,26 @@ end
 
 
 
-def pbDecideWinnerEffectiveness(move,otype1,otype2,ability,scores)
-  data=moveData(move)
-  return 0 if data.basedamage==0
-  atype=data.type
-  typemod=PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE*PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE
-  if !isConst?(ability,PBAbilities,:LEVITATE) || !isConst?(data.type,PBTypes,:GROUND)
-    mod1=PBTypes.getEffectiveness(atype,otype1)
-    mod2=(otype1==otype2) ? PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE : PBTypes.getEffectiveness(atype,otype2)
-    if isConst?(ability,PBAbilities,:WONDERGUARD)
-      mod1=PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE if !PBTypes.superEffective?(mod1)
-      mod2=PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE if !PBTypes.superEffective?(mod2)
+def pbDecideWinnerEffectiveness(move, otype1, otype2, ability, scores)
+  data = GameData::Move.get(move)
+  return 0 if data.base_damage == 0
+  atype = data.type
+  typemod = PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE * PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE
+  if ability != :LEVITATE || data.type != :GROUND
+    mod1 = PBTypes.getEffectiveness(atype, otype1)
+    mod2 = (otype1 == otype2) ? PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE : PBTypes.getEffectiveness(atype, otype2)
+    if ability == :WONDERGUARD
+      mod1 = PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE if mod1 <= PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE
+      mod2 = PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE if mod2 <= PBTypeEffectiveness::NORMAL_EFFECTIVE_ONE
     end
-    typemod=mod1*mod2
+    typemod = mod1 * mod2
   end
-  return scores[0] if typemod==0    # Ineffective
-  return scores[1] if typemod==1    # Doubly not very effective
-  return scores[2] if typemod==2    # Not very effective
-  return scores[3] if typemod==4    # Normal effective
-  return scores[4] if typemod==8    # Super effective
-  return scores[5] if typemod==16   # Doubly super effective
+  return scores[0] if typemod == 0    # Ineffective
+  return scores[1] if typemod == 1    # Doubly not very effective
+  return scores[2] if typemod == 2    # Not very effective
+  return scores[3] if typemod == 4    # Normal effective
+  return scores[4] if typemod == 8    # Super effective
+  return scores[5] if typemod == 16   # Doubly super effective
   return 0
 end
 
@@ -862,11 +804,11 @@ def pbDecideWinnerScore(party0,party1,rating)
   for j in 0...party1.length
     types1.push(party1[j].type1)
     types2.push(party1[j].type2)
-    abilities.push(party1[j].ability)
+    abilities.push(party1[j].ability_id)
   end
   for i in 0...party0.length
     for move in party0[i].moves
-      next if move.id==0
+      next if !move
       for j in 0...party1.length
         score+=pbDecideWinnerEffectiveness(move.id,
            types1[j],types2[j],abilities[j],[-16,-8,0,4,12,20])
@@ -874,7 +816,7 @@ def pbDecideWinnerScore(party0,party1,rating)
     end
     basestatsum=baseStatTotal(party0[i].species)
     score+=basestatsum/10
-    score+=10 if party0[i].item!=0 # Not in Battle Dome ranking
+    score+=10 if party0[i].item   # Not in Battle Dome ranking
   end
   score+=rating+rand(32)
   return score
@@ -903,8 +845,8 @@ def pbRuledBattle(team1,team2,rule)
     decision=pbDecideWinner(party1,party2,team1.rating,team2.rating)
   else
     level=rule.ruleset.suggestedLevel
-    trainer1=PokeBattle_Trainer.new("PLAYER1",1)
-    trainer2=PokeBattle_Trainer.new("PLAYER2",1)
+    trainer1=NPCTrainer.new("PLAYER1",1)
+    trainer2=NPCTrainer.new("PLAYER2",1)
     items1=[]
     items2=[]
     team1.each_with_index do |p,i|
@@ -913,7 +855,7 @@ def pbRuledBattle(team1,team2,rule)
         p.level=level
         p.calcStats
       end
-      items1[i]=p.item
+      items1[i]=p.item_id
       trainer1.party.push(p)
     end
     team2.each_with_index do |p,i|
@@ -922,7 +864,7 @@ def pbRuledBattle(team1,team2,rule)
         p.level=level
         p.calcStats
       end
-      items2[i]=p.item
+      items2[i]=p.item_id
       trainer2.party.push(p)
     end
     scene=PokeBattle_DebugSceneNoLogging.new
@@ -935,12 +877,12 @@ def pbRuledBattle(team1,team2,rule)
     team1.each_with_index do |p,i|
       next if !p
       p.heal
-      p.setItem(items1[i])
+      p.item = items1[i]
     end
     team2.each_with_index do |p,i|
       next if !p
       p.heal
-      p.setItem(items2[i])
+      p.item = items2[i]
     end
   end
   if decision==1 # Team 1 wins
@@ -956,42 +898,39 @@ def pbRuledBattle(team1,team2,rule)
 end
 
 def getTypes(species)
-  type1 = pbGetSpeciesData(species,0,SpeciesType1)
-  type2 = pbGetSpeciesData(species,0,SpeciesType2) || type1
-  return type1==type2 ? [type1] : [type1,type2]
+  species_data = GameData::Species.get(species)
+  type1 = species_data.type1
+  type2 = species_data.type2
+  return (type1 == type2) ? [type1] : [type1, type2]
 end
 
 def pbTrainerInfo(pokemonlist,trfile,rules)
   bttrainers=pbGetBTTrainers(trfile)
   btpokemon=pbGetBTPokemon(trfile)
-  trainertypes=pbLoadTrainerTypesData
   if bttrainers.length==0
     for i in 0...200
       yield(nil) if block_given? && i%50==0
       trainerid=0
-      money=30
-      loop do
-        trainerid=rand(PBTrainers.maxValue)+1
-        trainerid=getID(PBTrainers,:YOUNGSTER) if rand(30)==0
-        next if PBTrainers.getName(trainerid)==""
-        money=(!trainertypes[trainerid] ||
-               !trainertypes[trainerid][3]) ? 30 : trainertypes[trainerid][3]
-        next if money>=100
-        break
+      if GameData::TrainerType.exists?(:YOUNGSTER) && rand(30) == 0
+        trainerid = :YOUNGSTER
+      else
+        tr_type_values = GameData::TrainerType::DATA.values
+        loop do
+          tr_type_data = tr_type_values[rand(tr_type_values.length)]
+          next if tr_type_data.base_money >= 100
+          trainerid = tr_type_data.id
+        end
       end
-      gender=(!trainertypes[trainerid] ||
-              !trainertypes[trainerid][7]) ? 2 : trainertypes[trainerid][7]
+      gender = GameData::TrainerType.get(trainerid).gender
       randomName=getRandomNameEx(gender,nil,0,12)
       tr=[trainerid,randomName,_INTL("Here I come!"),
           _INTL("Yes, I won!"),_INTL("Man, I lost!"),[]]
       bttrainers.push(tr)
     end
-    bttrainers.sort! { |a,b|
-      money1=(!trainertypes[a[0]] ||
-              !trainertypes[a[0]][3]) ? 30 : trainertypes[a[0]][3]
-      money2=(!trainertypes[b[0]] ||
-              !trainertypes[b[0]][3]) ? 30 : trainertypes[b[0]][3]
-      money1==money2 ? a[0]<=>b[0] : money1<=>money2
+    bttrainers.sort! { |a, b|
+      money1 = GameData::TrainerType.get(a[0]).base_money
+      money2 = GameData::TrainerType.get(b[0]).base_money
+      (money1 == money2) ? a[0].to_s <=> b[0].to_s : money1 <=> money2
     }
   end
   yield(nil) if block_given?
@@ -1010,9 +949,9 @@ def pbTrainerInfo(pokemonlist,trfile,rules)
     trainerdata=bttrainers[btt]
     pokemonnumbers=trainerdata[5] || []
     species=[]
-    types=[]
+    types={}
     #p trainerdata[1]
-    (PBTypes.maxValue+1).times { |typ| types[typ]=0 }
+    GameData::Type.each { |t| types[t.id] = 0 }
     for pn in pokemonnumbers
       pkmn=btpokemon[pn]
       species.push(pkmn.species)
@@ -1021,18 +960,18 @@ def pbTrainerInfo(pokemonlist,trfile,rules)
     end
     species|=[] # remove duplicates
     count=0
-    (PBTypes.maxValue+1).times { |typ|
-      if types[typ]>=5
-        types[typ]/=4
-        types[typ]=10 if types[typ]>10
+    GameData::Type.each do |t|
+      if types[t.id] >= 5
+        types[t.id] /= 4
+        types[t.id] = 10 if types[t.id] > 10
       else
-        types[typ]=0
+        types[t.id] = 0
       end
-      count+=types[typ]
-    }
-    types[0]=1 if count==0
+      count += types[t.id]
+    end
+    types[:NORMAL] = 1 if count == 0
     if pokemonnumbers.length==0
-      (PBTypes.maxValue+1).times { |typ| types[typ]=1 }
+      GameData::Type.each { |t| types[t.id] = 1 }
     end
     numbers=[]
     if pokemonlist
@@ -1061,8 +1000,8 @@ def pbTrainerInfo(pokemonlist,trfile,rules)
         end
       end
       numbers|=[]
-      if (numbers.length<6 ||
-         !rulesetTeam.hasValidTeam?(numbersPokemon))
+      if numbers.length < Settings::MAX_PARTY_SIZE ||
+         !rulesetTeam.hasValidTeam?(numbersPokemon)
         for index in 0...pokemonlist.length
           pkmn=pokemonlist[index]
           next if !validities[index]
@@ -1079,11 +1018,11 @@ def pbTrainerInfo(pokemonlist,trfile,rules)
               end
             }
           end
-          break if numbers.length>=6 && rules.ruleset.hasValidTeam?(numbersPokemon)
+          break if numbers.length >= Settings::MAX_PARTY_SIZE && rules.ruleset.hasValidTeam?(numbersPokemon)
         end
-        if numbers.length<6 || !rules.ruleset.hasValidTeam?(numbersPokemon)
+        if numbers.length < Settings::MAX_PARTY_SIZE || !rules.ruleset.hasValidTeam?(numbersPokemon)
           while numbers.length<pokemonlist.length &&
-             (numbers.length<6 || !rules.ruleset.hasValidTeam?(numbersPokemon))
+             (numbers.length < Settings::MAX_PARTY_SIZE || !rules.ruleset.hasValidTeam?(numbersPokemon))
             index=rand(pokemonlist.length)
             if !numbers.include?(index)
               numbers.push(index)
@@ -1125,7 +1064,7 @@ def pbTrainerInfo(pokemonlist,trfile,rules)
   yield(nil) if block_given?
   save_data(trlists,"Data/trainer_lists.dat")
   yield(nil) if block_given?
-  pbSaveTrainerLists()
+  Compiler.write_trainer_lists
   yield(nil) if block_given?
 end
 
@@ -1151,18 +1090,15 @@ def isBattlePokemonDuplicate(pk,pk2)
   if pk.species==pk2.species
     moves1=[]
     moves2=[]
-    4.times{
-       moves1.push(pk.moves[0].id)
-       moves2.push(pk.moves[1].id)
-    }
+    for i in 0...Pokemon::MAX_MOVES
+      moves1.push((pk.moves[i]) ? pk.moves[i].id : nil)
+      moves2.push((pk2.moves[i]) ? pk2.moves[i].id : nil)
+    end
     moves1.sort!
     moves2.sort!
-    if moves1[0]==moves2[0] &&
-       moves1[1]==moves2[1] &&
-       moves1[2]==moves2[2] &&
-       moves1[3]==moves2[3]
+    if moves1 == moves2
       # Accept as same if moves are same and there are four moves each
-      return true if moves1[3]!=0
+      return true if moves1[Pokemon::MAX_MOVES - 1]
     end
     return true if pk.item==pk2.item &&
                    pk.nature==pk2.nature &&
@@ -1367,8 +1303,7 @@ def pbWriteCup(id,rules)
       trlists[cmd][2].push(id) if !trlists[cmd][5]
       save_data(trlists,"Data/trainer_lists.dat")
       Graphics.update
-      pbSaveTrainerLists
-      Graphics.update
+      Compiler.write_trainer_lists
     end
     return
   # Yes, use new

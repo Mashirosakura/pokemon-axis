@@ -125,17 +125,15 @@ Events.onStepTaken += proc {
            $PokemonBag.pbHasItem?(:SUPERREPEL) ||
            $PokemonBag.pbHasItem?(:MAXREPEL)
           if pbConfirmMessage(_INTL("The repellent's effect wore off! Would you like to use another one?"))
-            ret = 0
+            ret = nil
             pbFadeOutIn {
               scene = PokemonBag_Scene.new
               screen = PokemonBagScreen.new(scene,$PokemonBag)
               ret = screen.pbChooseItemScreen(Proc.new { |item|
-                isConst?(item,PBItems,:REPEL) ||
-                isConst?(item,PBItems,:SUPERREPEL) ||
-                isConst?(item,PBItems,:MAXREPEL)
+                [:REPEL, :SUPERREPEL, :MAXREPEL].include?(item)
               })
             }
-            pbUseItem($PokemonBag,ret) if ret>0
+            pbUseItem($PokemonBag,ret) if ret
           end
         else
           pbMessage(_INTL("The repellent's effect wore off!"))
@@ -195,12 +193,12 @@ ItemHandlers::UseInField.add(:ESCAPEROPE,proc { |item|
 ItemHandlers::UseInField.copy(:ESCAPEROPE,:INFINITEROPE)
 
 ItemHandlers::UseInField.add(:SACREDASH,proc { |item|
-  if $Trainer.pokemonCount==0
+  if $Trainer.pokemon_count == 0
     pbMessage(_INTL("There is no Pokémon."))
     next 0
   end
   canrevive = false
-  for i in $Trainer.pokemonParty
+  for i in $Trainer.pokemon_party
     next if !i.fainted?
     canrevive = true; break
   end
@@ -250,7 +248,7 @@ ItemHandlers::UseInField.add(:OLDROD,proc { |item|
     pbMessage(_INTL("Can't use that here."))
     next 0
   end
-  encounter = $PokemonEncounters.hasEncounter?(EncounterTypes::OldRod)
+  encounter = $PokemonEncounters.has_encounter_type?(EncounterTypes::OldRod)
   if pbFishing(encounter,1)
     pbEncounter(EncounterTypes::OldRod)
   end
@@ -264,7 +262,7 @@ ItemHandlers::UseInField.add(:GOODROD,proc { |item|
     pbMessage(_INTL("Can't use that here."))
     next 0
   end
-  encounter = $PokemonEncounters.hasEncounter?(EncounterTypes::GoodRod)
+  encounter = $PokemonEncounters.has_encounter_type?(EncounterTypes::GoodRod)
   if pbFishing(encounter,2)
     pbEncounter(EncounterTypes::GoodRod)
   end
@@ -278,7 +276,7 @@ ItemHandlers::UseInField.add(:SUPERROD,proc { |item|
     pbMessage(_INTL("Can't use that here."))
     next 0
   end
-  encounter = $PokemonEncounters.hasEncounter?(EncounterTypes::SuperRod)
+  encounter = $PokemonEncounters.has_encounter_type?(EncounterTypes::SuperRod)
   if pbFishing(encounter,3)
     pbEncounter(EncounterTypes::SuperRod)
   end
@@ -298,7 +296,7 @@ ItemHandlers::UseInField.add(:ITEMFINDER,proc { |item|
         $game_player.turn_right_90
       end
       pbWait(Graphics.frame_rate*3/10)
-      pbMessage(_INTL("The {1}'s indicating something right underfoot!",PBItems.getName(item)))
+      pbMessage(_INTL("The {1}'s indicating something right underfoot!",GameData::Item.get(item).name))
     else   # Item is nearby, face towards it
       direction = $game_player.direction
       if offsetX.abs>offsetY.abs
@@ -307,13 +305,13 @@ ItemHandlers::UseInField.add(:ITEMFINDER,proc { |item|
         direction = (offsetY<0) ? 8 : 2
       end
       case direction
-      when 2; $game_player.turn_down
-      when 4; $game_player.turn_left
-      when 6; $game_player.turn_right
-      when 8; $game_player.turn_up
+      when 2 then $game_player.turn_down
+      when 4 then $game_player.turn_left
+      when 6 then $game_player.turn_right
+      when 8 then $game_player.turn_up
       end
       pbWait(Graphics.frame_rate*3/10)
-      pbMessage(_INTL("Huh? The {1}'s responding!\1",PBItems.getName(item)))
+      pbMessage(_INTL("Huh? The {1}'s responding!\1",GameData::Item.get(item).name))
       pbMessage(_INTL("There's an item buried around here!"))
     end
   end
@@ -350,29 +348,28 @@ ItemHandlers::UseInField.add(:EXPALLOFF,proc { |item|
 
 # Applies to all items defined as an evolution stone.
 # No need to add more code for new ones.
-ItemHandlers::UseOnPokemon.addIf(proc { |item| pbIsEvolutionStone?(item)},
+ItemHandlers::UseOnPokemon.addIf(proc { |item| GameData::Item.get(item).is_evolution_stone? },
   proc { |item,pkmn,scene|
     if pkmn.shadowPokemon?
       scene.pbDisplay(_INTL("It won't have any effect."))
       next false
     end
-    newspecies = pbCheckEvolution(pkmn,item)
-    if newspecies<=0
-      scene.pbDisplay(_INTL("It won't have any effect."))
-      next false
-    else
+    newspecies = EvolutionCheck.check_item_methods(pkmn, item)
+    if newspecies
       pbFadeOutInWithMusic {
         evo = PokemonEvolutionScene.new
         evo.pbStartScreen(pkmn,newspecies)
         evo.pbEvolution(false)
         evo.pbEndScreen
         if scene.is_a?(PokemonPartyScreen)
-          scene.pbRefreshAnnotations(proc { |p| pbCheckEvolution(p,item)>0 })
+          scene.pbRefreshAnnotations(proc { |p| !EvolutionCheck.check_item_methods(p, item).nil? })
           scene.pbRefresh
         end
       }
       next true
     end
+    scene.pbDisplay(_INTL("It won't have any effect."))
+    next false
   }
 )
 
@@ -381,7 +378,7 @@ ItemHandlers::UseOnPokemon.add(:POTION,proc { |item,pkmn,scene|
 })
 
 ItemHandlers::UseOnPokemon.copy(:POTION,:BERRYJUICE,:SWEETHEART)
-ItemHandlers::UseOnPokemon.copy(:POTION,:RAGECANDYBAR) if !NEWEST_BATTLE_MECHANICS
+ItemHandlers::UseOnPokemon.copy(:POTION,:RAGECANDYBAR) if !Settings::RAGE_CANDY_BAR_CURES_STATUS_PROBLEMS
 
 ItemHandlers::UseOnPokemon.add(:SUPERPOTION,proc { |item,pkmn,scene|
   next pbHPItem(pkmn,50,scene)
@@ -424,7 +421,7 @@ ItemHandlers::UseOnPokemon.add(:AWAKENING,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1} woke up.",pkmn.name))
   next true
@@ -437,7 +434,7 @@ ItemHandlers::UseOnPokemon.add(:ANTIDOTE,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1} was cured of its poisoning.",pkmn.name))
   next true
@@ -450,7 +447,7 @@ ItemHandlers::UseOnPokemon.add(:BURNHEAL,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1}'s burn was healed.",pkmn.name))
   next true
@@ -463,7 +460,7 @@ ItemHandlers::UseOnPokemon.add(:PARLYZHEAL,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1} was cured of paralysis.",pkmn.name))
   next true
@@ -476,7 +473,7 @@ ItemHandlers::UseOnPokemon.add(:ICEHEAL,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1} was thawed out.",pkmn.name))
   next true
@@ -489,7 +486,7 @@ ItemHandlers::UseOnPokemon.add(:FULLHEAL,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1} became healthy.",pkmn.name))
   next true
@@ -498,7 +495,7 @@ ItemHandlers::UseOnPokemon.add(:FULLHEAL,proc { |item,pkmn,scene|
 ItemHandlers::UseOnPokemon.copy(:FULLHEAL,
    :LAVACOOKIE,:OLDGATEAU,:CASTELIACONE,:LUMIOSEGALETTE,:SHALOURSABLE,
    :BIGMALASADA,:LUMBERRY)
-ItemHandlers::UseOnPokemon.copy(:FULLHEAL,:RAGECANDYBAR) if NEWEST_BATTLE_MECHANICS
+ItemHandlers::UseOnPokemon.copy(:FULLHEAL,:RAGECANDYBAR) if Settings::RAGE_CANDY_BAR_CURES_STATUS_PROBLEMS
 
 ItemHandlers::UseOnPokemon.add(:FULLRESTORE,proc { |item,pkmn,scene|
   if pkmn.fainted? || (pkmn.hp==pkmn.totalhp && pkmn.status==PBStatuses::NONE)
@@ -506,7 +503,7 @@ ItemHandlers::UseOnPokemon.add(:FULLRESTORE,proc { |item,pkmn,scene|
     next false
   end
   hpgain = pbItemRestoreHP(pkmn,pkmn.totalhp-pkmn.hp)
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   if hpgain>0
     scene.pbDisplay(_INTL("{1}'s HP was restored by {2} points.",pkmn.name,hpgain))
@@ -523,7 +520,7 @@ ItemHandlers::UseOnPokemon.add(:REVIVE,proc { |item,pkmn,scene|
   end
   pkmn.hp = (pkmn.totalhp/2).floor
   pkmn.hp = 1 if pkmn.hp<=0
-  pkmn.healStatus
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1}'s HP was restored.",pkmn.name))
   next true
@@ -534,8 +531,8 @@ ItemHandlers::UseOnPokemon.add(:MAXREVIVE,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healHP
-  pkmn.healStatus
+  pkmn.heal_HP
+  pkmn.heal_status
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1}'s HP was restored.",pkmn.name))
   next true
@@ -562,7 +559,7 @@ ItemHandlers::UseOnPokemon.add(:HEALPOWDER,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healStatus
+  pkmn.heal_status
   pkmn.changeHappiness("powder")
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1} became healthy.",pkmn.name))
@@ -574,8 +571,8 @@ ItemHandlers::UseOnPokemon.add(:REVIVALHERB,proc { |item,pkmn,scene|
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  pkmn.healHP
-  pkmn.healStatus
+  pkmn.heal_HP
+  pkmn.heal_status
   pkmn.changeHappiness("revivalherb")
   scene.pbRefresh
   scene.pbDisplay(_INTL("{1}'s HP was restored.",pkmn.name))
@@ -598,7 +595,7 @@ ItemHandlers::UseOnPokemon.copy(:ETHER,:LEPPABERRY)
 ItemHandlers::UseOnPokemon.add(:MAXETHER,proc { |item,pkmn,scene|
   move = scene.pbChooseMove(pkmn,_INTL("Restore which move?"))
   next false if move<0
-  if pbRestorePP(pkmn,move,pkmn.moves[move].totalpp-pkmn.moves[move].pp)==0
+  if pbRestorePP(pkmn,move,pkmn.moves[move].total_pp-pkmn.moves[move].pp)==0
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
@@ -622,7 +619,7 @@ ItemHandlers::UseOnPokemon.add(:ELIXIR,proc { |item,pkmn,scene|
 ItemHandlers::UseOnPokemon.add(:MAXELIXIR,proc { |item,pkmn,scene|
   pprestored = 0
   for i in 0...pkmn.moves.length
-    pprestored += pbRestorePP(pkmn,i,pkmn.moves[i].totalpp-pkmn.moves[i].pp)
+    pprestored += pbRestorePP(pkmn,i,pkmn.moves[i].total_pp-pkmn.moves[i].pp)
   end
   if pprestored==0
     scene.pbDisplay(_INTL("It won't have any effect."))
@@ -635,12 +632,12 @@ ItemHandlers::UseOnPokemon.add(:MAXELIXIR,proc { |item,pkmn,scene|
 ItemHandlers::UseOnPokemon.add(:PPUP,proc { |item,pkmn,scene|
   move = scene.pbChooseMove(pkmn,_INTL("Boost PP of which move?"))
   if move>=0
-    if pkmn.moves[move].totalpp<=1 || pkmn.moves[move].ppup>=3
+    if pkmn.moves[move].total_pp<=1 || pkmn.moves[move].ppup>=3
       scene.pbDisplay(_INTL("It won't have any effect."))
       next false
     end
     pkmn.moves[move].ppup += 1
-    movename = PBMoves.getName(pkmn.moves[move].id)
+    movename = pkmn.moves[move].name
     scene.pbDisplay(_INTL("{1}'s PP increased.",movename))
     next true
   end
@@ -650,12 +647,12 @@ ItemHandlers::UseOnPokemon.add(:PPUP,proc { |item,pkmn,scene|
 ItemHandlers::UseOnPokemon.add(:PPMAX,proc { |item,pkmn,scene|
   move = scene.pbChooseMove(pkmn,_INTL("Boost PP of which move?"))
   if move>=0
-    if pkmn.moves[move].totalpp<=1 || pkmn.moves[move].ppup>=3
+    if pkmn.moves[move].total_pp<=1 || pkmn.moves[move].ppup>=3
       scene.pbDisplay(_INTL("It won't have any effect."))
       next false
     end
     pkmn.moves[move].ppup = 3
-    movename = PBMoves.getName(pkmn.moves[move].id)
+    movename = pkmn.moves[move].name
     scene.pbDisplay(_INTL("{1}'s PP increased.",movename))
     next true
   end
@@ -997,14 +994,14 @@ ItemHandlers::UseOnPokemon.add(:DNASPLICERS,proc { |item,pkmn,scene|
     newForm = 2 if poke2.isSpecies?(:ZEKROM)
     pkmn.setForm(newForm) {
       pkmn.fused = poke2
-      pbRemovePokemonAt(chosen)
+      $Trainer.remove_pokemon_at_index(chosen)
       scene.pbHardRefresh
       scene.pbDisplay(_INTL("{1} changed Forme!",pkmn.name))
     }
     next true
   end
   # Unfusing
-  if $Trainer.party.length>=6
+  if $Trainer.party_full?
     scene.pbDisplay(_INTL("You have no room to separate the Pokémon."))
     next false
   end
@@ -1046,14 +1043,14 @@ ItemHandlers::UseOnPokemon.add(:NSOLARIZER,proc { |item,pkmn,scene|
     end
     pkmn.setForm(1) {
       pkmn.fused = poke2
-      pbRemovePokemonAt(chosen)
+      $Trainer.remove_pokemon_at_index(chosen)
       scene.pbHardRefresh
       scene.pbDisplay(_INTL("{1} changed Forme!",pkmn.name))
     }
     next true
   end
   # Unfusing
-  if $Trainer.party.length>=6
+  if $Trainer.party_full?
     scene.pbDisplay(_INTL("You have no room to separate the Pokémon."))
     next false
   end
@@ -1095,14 +1092,14 @@ ItemHandlers::UseOnPokemon.add(:NLUNARIZER,proc { |item,pkmn,scene|
     end
     pkmn.setForm(2) {
       pkmn.fused = poke2
-      pbRemovePokemonAt(chosen)
+      $Trainer.remove_pokemon_at_index(chosen)
       scene.pbHardRefresh
       scene.pbDisplay(_INTL("{1} changed Forme!",pkmn.name))
     }
     next true
   end
   # Unfusing
-  if $Trainer.party.length>=6
+  if $Trainer.party_full?
     scene.pbDisplay(_INTL("You have no room to separate the Pokémon."))
     next false
   end
@@ -1117,23 +1114,22 @@ ItemHandlers::UseOnPokemon.add(:NLUNARIZER,proc { |item,pkmn,scene|
 
 ItemHandlers::UseOnPokemon.add(:ABILITYCAPSULE,proc { |item,pkmn,scene|
   abils = pkmn.getAbilityList
-  abil1 = 0; abil2 = 0
+  abil1 = nil; abil2 = nil
   for i in abils
     abil1 = i[0] if i[1]==0
     abil2 = i[0] if i[1]==1
   end
-  if abil1<=0 || abil2<=0 || pkmn.hasHiddenAbility? || pkmn.isSpecies?(:ZYGARDE)
+  if abil1.nil? || abil2.nil? || pkmn.hasHiddenAbility? || pkmn.isSpecies?(:ZYGARDE)
     scene.pbDisplay(_INTL("It won't have any effect."))
     next false
   end
-  newabil = (pkmn.abilityIndex+1)%2
-  newabilname = PBAbilities.getName((newabil==0) ? abil1 : abil2)
+  newabil = (pkmn.ability_index + 1) % 2
+  newabilname = GameData::Ability.get((newabil==0) ? abil1 : abil2).name
   if scene.pbConfirm(_INTL("Would you like to change {1}'s Ability to {2}?",
      pkmn.name,newabilname))
-    pkmn.setAbility(newabil)
+    pkmn.ability_index = newabil
     scene.pbRefresh
-    scene.pbDisplay(_INTL("{1}'s Ability changed to {2}!",pkmn.name,
-       PBAbilities.getName(pkmn.ability)))
+    scene.pbDisplay(_INTL("{1}'s Ability changed to {2}!",pkmn.name,newabilname))
     next true
   end
   next false

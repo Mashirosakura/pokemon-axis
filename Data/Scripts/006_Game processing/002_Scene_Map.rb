@@ -48,7 +48,7 @@ class Scene_Map
     playingBGM = $game_system.playing_bgm
     playingBGS = $game_system.playing_bgs
     return if !playingBGM && !playingBGS
-    map = pbLoadRxData(sprintf("Data/Map%03d",mapid))
+    map = load_data(sprintf("Data/Map%03d.rxdata", mapid))
     if playingBGM && map.autoplay_bgm
       if (PBDayNight.isNight? rescue false)
         pbBGMFade(0.8) if playingBGM.name!=map.bgm.name && playingBGM.name!=map.bgm.name+"_n"
@@ -72,10 +72,10 @@ class Scene_Map
     end
     $game_player.moveto($game_temp.player_new_x, $game_temp.player_new_y)
     case $game_temp.player_new_direction
-    when 2; $game_player.turn_down
-    when 4; $game_player.turn_left
-    when 6; $game_player.turn_right
-    when 8; $game_player.turn_up
+    when 2 then $game_player.turn_down
+    when 4 then $game_player.turn_left
+    when 6 then $game_player.turn_right
+    when 8 then $game_player.turn_up
     end
     $game_player.straighten
     $game_map.update
@@ -89,12 +89,6 @@ class Scene_Map
     $game_map.autoplay
     Graphics.frame_reset
     Input.update
-  end
-
-  def call_name
-    $game_temp.name_calling = false
-    $game_player.straighten
-    $game_map.update
   end
 
   def call_menu
@@ -202,12 +196,8 @@ class Scene_Map
       end
     end
     unless $game_player.moving?
-      if $game_temp.name_calling;      call_name
-      elsif $game_temp.menu_calling;   call_menu
+      if $game_temp.menu_calling;      call_menu
       elsif $game_temp.debug_calling;  call_debug
-#      elsif $game_temp.battle_calling; call_battle
-#      elsif $game_temp.shop_calling;   call_shop
-#      elsif $game_temp.save_calling;   call_save
       elsif $PokemonTemp.keyItemCalling
         $PokemonTemp.keyItemCalling = false
         $game_player.straighten

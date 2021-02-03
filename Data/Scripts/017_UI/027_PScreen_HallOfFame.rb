@@ -241,7 +241,7 @@ class HallOfFame_Scene
 
   def createTrainerBattler
     @sprites["trainer"]=IconSprite.new(@viewport)
-    @sprites["trainer"].setBitmap(pbTrainerSpriteFile($Trainer.trainertype))
+    @sprites["trainer"].setBitmap(GameData::TrainerType.front_sprite_filename($Trainer.trainer_type))
     if !SINGLEROW
       @sprites["trainer"].x=Graphics.width-96
       @sprites["trainer"].y=160
@@ -276,12 +276,12 @@ class HallOfFame_Scene
     totalsec = Graphics.frame_count / Graphics.frame_rate
     hour = totalsec / 60 / 60
     min = totalsec / 60 % 60
-    pubid=sprintf("%05d",$Trainer.publicID($Trainer.id))
+    pubid=sprintf("%05d",$Trainer.public_ID)
     lefttext= _INTL("Name<r>{1}<br>",$Trainer.name)
     lefttext+=_INTL("IDNo.<r>{1}<br>",pubid)
     lefttext+=_ISPRINTF("Time<r>{1:02d}:{2:02d}<br>",hour,min)
     lefttext+=_INTL("Pokédex<r>{1}/{2}<br>",
-        $Trainer.pokedexOwned,$Trainer.pokedexSeen)
+        $Trainer.owned_count,$Trainer.seen_count)
     @sprites["messagebox"]=Window_AdvancedTextPokemon.new(lefttext)
     @sprites["messagebox"].viewport=@viewport
     @sprites["messagebox"].width=192 if @sprites["messagebox"].width<192
@@ -294,7 +294,7 @@ class HallOfFame_Scene
     overlay=@sprites["overlay"].bitmap
     overlay.clear
     pokename=pokemon.name
-    speciesname=PBSpecies.getName(pokemon.species)
+    speciesname=pokemon.speciesName
     if pokemon.male?
       speciesname+="♂"
     elsif pokemon.female?
@@ -302,7 +302,7 @@ class HallOfFame_Scene
     end
     pokename+="/"+speciesname
     pokename=_INTL("Egg")+"/"+_INTL("Egg") if pokemon.egg?
-    idno=(pokemon.ot=="" || pokemon.egg?) ? "?????" : sprintf("%05d",pokemon.publicID)
+    idno=(pokemon.owner.name.empty? || pokemon.egg?) ? "?????" : sprintf("%05d",pokemon.owner.public_id)
     dexnumber=pokemon.egg? ? _INTL("No. ???") : _ISPRINTF("No. {1:03d}",pokemon.species)
     textPositions=[
        [dexnumber,32,Graphics.height-80,0,BASECOLOR,SHADOWCOLOR],
@@ -373,7 +373,7 @@ class HallOfFame_Scene
         if @battlerIndex<=@hallEntry.size
           # If it is a pokémon, write the pokémon text, wait the
           # ENTRYWAITTIME and goes to the next battler
-          pbPlayCry(@hallEntry[@battlerIndex-1])
+          GameData::Species.play_cry_from_pokemon(@hallEntry[@battlerIndex - 1])
           writePokemonData(@hallEntry[@battlerIndex-1])
           (ENTRYWAITTIME*Graphics.frame_rate/20).times do
             Graphics.update
@@ -428,7 +428,7 @@ class HallOfFame_Scene
       createBattlers(false)
     end
     # Change the pokemon
-    pbPlayCry(@hallEntry[@battlerIndex])
+    GameData::Species.play_cry_from_pokemon(@hallEntry[@battlerIndex])
     setPokemonSpritesOpacity(@battlerIndex,OPACITY)
     hallNumber=$PokemonGlobal.hallOfFameLastNumber + @hallIndex -
                $PokemonGlobal.hallOfFame.size + 1
@@ -437,8 +437,9 @@ class HallOfFame_Scene
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class HallOfFameScreen
   def initialize(scene)
     @scene = scene
@@ -457,8 +458,9 @@ class HallOfFameScreen
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class HallOfFamePC
   def shouldShow?
     return $PokemonGlobal.hallOfFameLastNumber>0
@@ -474,12 +476,14 @@ class HallOfFamePC
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 PokemonPCList.registerPC(HallOfFamePC.new)
 
-
-
+#===============================================================================
+#
+#===============================================================================
 class PokemonGlobalMetadata
   attr_writer :hallOfFame
   # Number necessary if hallOfFame array reach in its size limit
@@ -495,8 +499,9 @@ class PokemonGlobalMetadata
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbHallOfFameEntry
   scene=HallOfFame_Scene.new
   screen=HallOfFameScreen.new(scene)

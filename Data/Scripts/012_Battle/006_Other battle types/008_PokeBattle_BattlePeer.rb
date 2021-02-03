@@ -7,7 +7,7 @@ class PokeBattle_NullBattlePeer
   def pbOnLeavingBattle(battle,pkmn,usedInBattle,endBattle=false); end
 
   def pbStorePokemon(player,pkmn)
-    player.party[player.party.length] = pkmn if player.party.length<6
+    player.party[player.party.length] = pkmn if !player.party_full?
     return -1
   end
 
@@ -23,7 +23,7 @@ end
 #===============================================================================
 class PokeBattle_RealBattlePeer
   def pbStorePokemon(player,pkmn)
-    if player.party.length<6
+    if !player.party_full?
       player.party[player.party.length] = pkmn
       return -1
     end
@@ -50,6 +50,19 @@ class PokeBattle_RealBattlePeer
 
   def pbBoxName(box)
     return (box<0) ? "" : $PokemonStorage[box].name
+  end
+
+  def pbOnEnteringBattle(_battle,pkmn,wild=false)
+    f = MultipleForms.call("getFormOnEnteringBattle",pkmn,wild)
+    pkmn.form = f if f
+  end
+
+  # For switching out, including due to fainting, and for the end of battle
+  def pbOnLeavingBattle(battle,pkmn,usedInBattle,endBattle=false)
+    return if !pkmn
+    f = MultipleForms.call("getFormOnLeavingBattle",pkmn,battle,usedInBattle,endBattle)
+    pkmn.form = f if f && pkmn.form!=f
+    pkmn.hp = pkmn.totalhp if pkmn.hp>pkmn.totalhp
   end
 end
 

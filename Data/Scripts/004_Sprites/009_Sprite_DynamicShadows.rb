@@ -4,8 +4,6 @@
 # features Boushy
 # Modified by Peter O. to be compatible with Pokémon Essentials
 #===============================================================================
-SHADOW_WARN = true
-
 class Sprite_Shadow < RPG::Sprite
   attr_accessor :character
 
@@ -68,10 +66,10 @@ class Sprite_Shadow < RPG::Sprite
       sy = (@character.direction - 2) / 2 * @ch
       if self.angle > 90 or angle < -90
         case @character.direction
-        when 2; sy = (8- 2) / 2 * @ch
-        when 4; sy = (6- 2) / 2 * @ch
-        when 6; sy = (4- 2) / 2 * @ch
-        when 8; sy = (2- 2) / 2 * @ch
+        when 2 then sy = (8- 2) / 2 * @ch
+        when 4 then sy = (6- 2) / 2 * @ch
+        when 6 then sy = (4- 2) / 2 * @ch
+        when 8 then sy = (2- 2) / 2 * @ch
         end
       end
       self.src_rect.set(sx, sy, @cw, @ch)
@@ -193,7 +191,7 @@ class Spriteset_Map
       params = XPML_read(map,"Shadow Source", ev, 4)
       @shadows.push([ev] + params) if params != nil
     end
-    if warn == true and SHADOW_WARN
+    if warn == true
       p "Warning : At least one event on this map uses the obsolete way to add shadows"
     end
     shadow_initialize(map)

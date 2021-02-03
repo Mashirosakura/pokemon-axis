@@ -161,8 +161,8 @@ class PokemonDataBox < SpriteWrapper
     return (@animatingHP) ? @currentHP : @battler.hp
   end
 
-  def expFraction
-    return (@animatingExp) ? @currentExp.to_f/@rangeExp : @battler.pokemon.expFraction
+  def exp_fraction
+    return (@animatingExp) ? @currentExp.to_f/@rangeExp : @battler.pokemon.exp_fraction
   end
 
   def animateHP(oldHP,newHP,rangeHP)
@@ -283,7 +283,7 @@ class PokemonDataBox < SpriteWrapper
 
   def refreshExp
     return if !@showExp
-    w = self.expFraction*@expBarBitmap.width
+    w = exp_fraction * @expBarBitmap.width
     # NOTE: The line below snaps the bar's width to the nearest 2 pixels, to
     #       fit in with the rest of the graphics which are doubled in size.
     w = ((w/2).round)*2
@@ -350,8 +350,8 @@ class PokemonDataBox < SpriteWrapper
     # Data box bobbing while Pokémon is selected
     if @selected==1 || @selected==2   # Choosing commands/targeted or damaged
       case (frameCounter/QUARTER_ANIM_PERIOD).floor
-      when 1; self.y = @spriteY-2
-      when 3; self.y = @spriteY+2
+      when 1 then self.y = @spriteY-2
+      when 3 then self.y = @spriteY+2
       end
     end
   end
@@ -547,25 +547,24 @@ class PokemonBattlerSprite < RPG::Sprite
     @spriteX = p[0]
     @spriteY = p[1]
     # Apply metrics
-    pbApplyBattlerMetricsToSprite(self,@index,@pkmn.fSpecies)
+    @pkmn.species_data.apply_metrics_to_sprite(self, @index)
   end
 
   def setPokemonBitmap(pkmn,back=false)
     @pkmn = pkmn
     @_iconBitmap.dispose if @_iconBitmap
-    @_iconBitmap = pbLoadPokemonBitmap(@pkmn,back)
+    @_iconBitmap = GameData::Species.sprite_bitmap_from_pokemon(@pkmn, back)
     self.bitmap = (@_iconBitmap) ? @_iconBitmap.bitmap : nil
     pbSetPosition
   end
 
   # This method plays the battle entrance animation of a Pokémon. By default
   # this is just playing the Pokémon's cry, but you can expand on it. The
-  # recommendation is to create a PictureEx animation and push it into the
-  # @battleAnimations array.
+  # recommendation is to create a PictureEx animation and push it into
+  # the @battleAnimations array.
   def pbPlayIntroAnimation(pictureEx=nil)
     return if !@pkmn
-    cry = pbCryFile(@pkmn)
-    pbSEPlay(cry) if cry
+    GameData::Species.play_cry_from_pokemon(@pkmn)
   end
 
   QUARTER_ANIM_PERIOD = Graphics.frame_rate*3/20
@@ -581,8 +580,8 @@ class PokemonBattlerSprite < RPG::Sprite
     @spriteYExtra = 0
     if @selected==1    # When choosing commands for this Pokémon
       case (frameCounter/QUARTER_ANIM_PERIOD).floor
-      when 1; @spriteYExtra = 2
-      when 3; @spriteYExtra = -2
+      when 1 then @spriteYExtra = 2
+      when 3 then @spriteYExtra = -2
       end
     end
     self.x       = self.x
@@ -591,8 +590,8 @@ class PokemonBattlerSprite < RPG::Sprite
     # Pokémon sprite blinking when targeted
     if @selected==2 && @spriteVisible
       case (frameCounter/SIXTH_ANIM_PERIOD).floor
-      when 2, 5; self.visible = false
-      else;      self.visible = true
+      when 2, 5 then self.visible = false
+      else           self.visible = true
       end
     end
     @updating = false
@@ -644,13 +643,13 @@ class PokemonBattlerShadowSprite < RPG::Sprite
     self.x = p[0]
     self.y = p[1]
     # Apply metrics
-    pbApplyBattlerMetricsToSprite(self,@index,@pkmn.fSpecies,true)
+    @pkmn.species_data.apply_metrics_to_sprite(self, @index, true)
   end
 
   def setPokemonBitmap(pkmn)
     @pkmn = pkmn
     @_iconBitmap.dispose if @_iconBitmap
-    @_iconBitmap = pbLoadPokemonShadowBitmap(@pkmn)
+    @_iconBitmap = GameData::Species.shadow_bitmap_from_pokemon(@pkmn)
     self.bitmap = (@_iconBitmap) ? @_iconBitmap.bitmap : nil
     pbSetPosition
   end

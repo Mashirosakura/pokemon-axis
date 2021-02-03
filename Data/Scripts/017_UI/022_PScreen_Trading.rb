@@ -1,3 +1,6 @@
+#===============================================================================
+#
+#===============================================================================
 class PokemonTrade_Scene
   def pbUpdate
     pbUpdateSpriteHash(@sprites)
@@ -41,14 +44,14 @@ class PokemonTrade_Scene
     @sprites["rsprite1"].x = Graphics.width/2
     @sprites["rsprite1"].y = 264
     @sprites["rsprite1"].z = 10
-    pbApplyBattlerMetricsToSprite(@sprites["rsprite1"],1,@pokemon.fSpecies)
+    @pokemon.species_data.apply_metrics_to_sprite(@sprites["rsprite1"], 1)
     @sprites["rsprite2"] = PokemonSprite.new(@viewport)
     @sprites["rsprite2"].setPokemonBitmap(@pokemon2,false)
     @sprites["rsprite2"].setOffset(PictureOrigin::Bottom)
     @sprites["rsprite2"].x = Graphics.width/2
     @sprites["rsprite2"].y = 264
     @sprites["rsprite2"].z = 10
-    pbApplyBattlerMetricsToSprite(@sprites["rsprite2"],1,@pokemon2.fSpecies)
+    @pokemon2.species_data.apply_metrics_to_sprite(@sprites["rsprite2"], 1)
     @sprites["rsprite2"].visible = false
     @sprites["msgwindow"] = pbCreateMessageWindow(@viewport)
     pbFadeInAndShow(@sprites)
@@ -58,9 +61,17 @@ class PokemonTrade_Scene
     spriteBall = IconSprite.new(0,0,@viewport)
     pictureBall = PictureEx.new(0)
     picturePoke = PictureEx.new(0)
+    ballimage = sprintf("Graphics/Battle animations/ball_%s", @pokemon.poke_ball)
+    if !pbResolveBitmap(ballimage)
+      ballimage = sprintf("Graphics/Battle animations/ball_%02d", pbGetBallType(@pokemon.poke_ball))
+    end
+    ballopenimage = sprintf("Graphics/Battle animations/ball_%s_open", @pokemon.poke_ball)
+    if !pbResolveBitmap(ballimage)
+      ballopenimage = sprintf("Graphics/Battle animations/ball_%02d_open", pbGetBallType(@pokemon.poke_ball))
+    end
     # Starting position of ball
     pictureBall.setXY(0,Graphics.width/2,48)
-    pictureBall.setName(0,sprintf("Graphics/Battle animations/ball_%02d",@pokemon.ballused))
+    pictureBall.setName(0,ballimage)
     pictureBall.setSrcSize(0,32,64)
     pictureBall.setOrigin(0,PictureOrigin::Center)
     pictureBall.setVisible(0,true)
@@ -73,7 +84,7 @@ class PokemonTrade_Scene
     # Recall
     delay = picturePoke.totalDuration
     picturePoke.setSE(delay,"Battle recall")
-    pictureBall.setName(delay,sprintf("Graphics/Battle animations/ball_%02d_open",@pokemon.ballused))
+    pictureBall.setName(delay,ballopenimage)
     pictureBall.setSrcSize(delay,32,64)
     # Move sprite to ball
     picturePoke.moveZoom(delay,8,0)
@@ -81,7 +92,7 @@ class PokemonTrade_Scene
     picturePoke.setSE(delay+5,"Battle jump to ball")
     picturePoke.setVisible(delay+8,false)
     delay = picturePoke.totalDuration+1
-    pictureBall.setName(delay,sprintf("Graphics/Battle animations/ball_%02d",@pokemon.ballused))
+    pictureBall.setName(delay,ballimage)
     pictureBall.setSrcSize(delay,32,64)
     # Make Poké Ball go off the top of the screen
     delay = picturePoke.totalDuration+10
@@ -98,9 +109,17 @@ class PokemonTrade_Scene
     spriteBall = IconSprite.new(0,0,@viewport)
     pictureBall = PictureEx.new(0)
     picturePoke = PictureEx.new(0)
+    ballimage = sprintf("Graphics/Battle animations/ball_%s", @pokemon2.poke_ball)
+    if !pbResolveBitmap(ballimage)
+      ballimage = sprintf("Graphics/Battle animations/ball_%02d", pbGetBallType(@pokemon2.poke_ball))
+    end
+    ballopenimage = sprintf("Graphics/Battle animations/ball_%s_open", @pokemon2.poke_ball)
+    if !pbResolveBitmap(ballimage)
+      ballopenimage = sprintf("Graphics/Battle animations/ball_%02d_open", pbGetBallType(@pokemon2.poke_ball))
+    end
     # Starting position of ball
     pictureBall.setXY(0,Graphics.width/2,-32)
-    pictureBall.setName(0,sprintf("Graphics/Battle animations/ball_%02d",@pokemon2.ballused))
+    pictureBall.setName(0,ballimage)
     pictureBall.setSrcSize(0,32,64)
     pictureBall.setOrigin(0,PictureOrigin::Center)
     pictureBall.setVisible(0,true)
@@ -129,7 +148,7 @@ class PokemonTrade_Scene
     # Open Poké Ball
     delay = pictureBall.totalDuration+15
     pictureBall.setSE(delay,"Battle recall")
-    pictureBall.setName(delay,sprintf("Graphics/Battle animations/ball_%02d_open",@pokemon2.ballused))
+    pictureBall.setName(delay,ballopenimage)
     pictureBall.setSrcSize(delay,32,64)
     pictureBall.setVisible(delay+5,false)
     # Pokémon appears and enlarges
@@ -139,8 +158,8 @@ class PokemonTrade_Scene
     # Return Pokémon's color to normal and play cry
     delay = picturePoke.totalDuration
     picturePoke.moveColor(delay,5,Color.new(31*8,22*8,30*8,0))
-    cry = pbCryFile(@pokemon2)
-    picturePoke.setSE(delay,cry) if pbResolveAudioSE(cry)
+    cry = GameData::Species.cry_filename_from_pokemon(@pokemon2)
+    picturePoke.setSE(delay,cry) if cry
     # Play animation
     pbRunPictures(
        [picturePoke,pictureBall],
@@ -154,8 +173,8 @@ class PokemonTrade_Scene
     pbFadeOutAndHide(@sprites)
     pbDisposeSpriteHash(@sprites)
     @viewport.dispose
-    newspecies = pbTradeCheckEvolution(@pokemon2,@pokemon)
-    if newspecies>0
+    newspecies = EvolutionCheck.check_trade_methods(@pokemon2,@pokemon)
+    if newspecies
       evo = PokemonEvolutionScene.new
       evo.pbStartScreen(@pokemon2,newspecies)
       evo.pbEvolution(false)
@@ -165,12 +184,12 @@ class PokemonTrade_Scene
 
   def pbTrade
     pbBGMStop
-    pbPlayCry(@pokemon)
-    speciesname1=PBSpecies.getName(@pokemon.species)
-    speciesname2=PBSpecies.getName(@pokemon2.species)
+    GameData::Species.play_cry_from_pokemon(@pokemon)
+    speciesname1=GameData::Species.get(@pokemon.species).name
+    speciesname2=GameData::Species.get(@pokemon2.species).name
     pbMessageDisplay(@sprites["msgwindow"],
        _ISPRINTF("{1:s}\r\nID: {2:05d}   OT: {3:s}\\wtnp[0]",
-       @pokemon.name,@pokemon.publicID,@pokemon.ot)) { pbUpdate }
+       @pokemon.name,@pokemon.owner.public_id,@pokemon.owner.name)) { pbUpdate }
     pbMessageWaitForInput(@sprites["msgwindow"],50,true) { pbUpdate }
     pbPlayDecisionSE
     pbScene1
@@ -181,39 +200,36 @@ class PokemonTrade_Scene
     pbScene2
     pbMessageDisplay(@sprites["msgwindow"],
        _ISPRINTF("{1:s}\r\nID: {2:05d}   OT: {3:s}\1",
-       @pokemon2.name,@pokemon2.publicID,@pokemon2.ot)) { pbUpdate }
+       @pokemon2.name,@pokemon2.owner.public_id,@pokemon2.owner.name)) { pbUpdate }
     pbMessageDisplay(@sprites["msgwindow"],
        _INTL("Take good care of {1}.",speciesname2)) { pbUpdate }
   end
 end
 
-
-
+#===============================================================================
+#
+#===============================================================================
 def pbStartTrade(pokemonIndex,newpoke,nickname,trainerName,trainerGender=0)
   myPokemon = $Trainer.party[pokemonIndex]
-  opponent = PokeBattle_Trainer.new(trainerName,trainerGender)
-  opponent.setForeignID($Trainer)
-  yourPokemon = nil; resetmoves = true
-  if newpoke.is_a?(PokeBattle_Pokemon)
-    newpoke.trainerID = opponent.id
-    newpoke.ot        = opponent.name
-    newpoke.otgender  = opponent.gender
-    newpoke.language  = opponent.language
+  opponent = NPCTrainer.new(trainerName,trainerGender)
+  opponent.id = $Trainer.make_foreign_ID
+  yourPokemon = nil
+  resetmoves = true
+  if newpoke.is_a?(Pokemon)
+    newpoke.owner = Pokemon::Owner.new_from_trainer(opponent)
     yourPokemon = newpoke
     resetmoves = false
   else
-    if newpoke.is_a?(String) || newpoke.is_a?(Symbol)
-      raise _INTL("Species does not exist ({1}).",newpoke) if !hasConst?(PBSpecies,newpoke)
-      newpoke = getID(PBSpecies,newpoke)
-    end
-    yourPokemon = pbNewPkmn(newpoke,myPokemon.level,opponent)
+    species_data = GameData::Species.try_get(newpoke)
+    raise _INTL("Species does not exist ({1}).", newpoke) if !species_data
+    yourPokemon = Pokemon.new(species_data.id, myPokemon.level, opponent)
   end
-  yourPokemon.name       = nickname
-  yourPokemon.obtainMode = 2   # traded
+  yourPokemon.name          = nickname
+  yourPokemon.obtain_method = 2   # traded
   yourPokemon.resetMoves if resetmoves
-  yourPokemon.pbRecordFirstMoves
-  $Trainer.seen[yourPokemon.species]  = true
-  $Trainer.owned[yourPokemon.species] = true
+  yourPokemon.record_first_moves
+  $Trainer.set_seen(yourPokemon.species)
+  $Trainer.set_owned(yourPokemon.species)
   pbSeenForm(yourPokemon)
   pbFadeOutInWithMusic {
     evo = PokemonTrade_Scene.new
@@ -222,15 +238,4 @@ def pbStartTrade(pokemonIndex,newpoke,nickname,trainerName,trainerGender=0)
     evo.pbEndScreen
   }
   $Trainer.party[pokemonIndex] = yourPokemon
-end
-
-#===============================================================================
-# Evolution methods
-#===============================================================================
-def pbTradeCheckEvolution(pkmn, other_pkmn)
-  ret = pbCheckEvolutionEx(pkmn) { |pkmn, method, parameter, new_species|
-    success = PBEvolution.call("tradeCheck", method, pkmn, parameter, other_pkmn)
-    next (success) ? new_species : -1
-  }
-  return ret
 end

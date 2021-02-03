@@ -49,9 +49,9 @@ class PokemonDuel
     @viewport.z = 99999
     @sprites = {}
     @sprites["player"] = IconSprite.new(-128 - 32, 96, @viewport)
-    @sprites["player"].setBitmap(pbTrainerSpriteFile($Trainer.trainertype))
+    @sprites["player"].setBitmap(GameData::TrainerType.front_sprite_filename($Trainer.trainer_type))
     @sprites["opponent"] = IconSprite.new(Graphics.width + 32, 96, @viewport)
-    @sprites["opponent"].setBitmap(pbTrainerSpriteFile(opponent.trainertype))
+    @sprites["opponent"].setBitmap(GameData::TrainerType.front_sprite_filename(opponent.trainer_type))
     @sprites["playerwindow"] = DuelWindow.new($Trainer.name, false)
     @sprites["playerwindow"].x        = -@sprites["playerwindow"].width
     @sprites["playerwindow"].viewport = @viewport
@@ -379,9 +379,9 @@ end
 # event - Game_Event object for the character's event
 # speeches - Array of 12 speeches
 def pbDuel(trainer_id, trainer_name, event, speeches)
-  trainer_id = getID(PBTrainers, trainer_id)
+  trainer_id = GameData::TrainerType.get(trainer_id).id
   duel = PokemonDuel.new
-  opponent = PokeBattle_Trainer.new(
+  opponent = NPCTrainer.new(
      pbGetMessageFromHash(MessageTypes::TrainerNames,trainer_name), trainer_id)
   speech_texts = []
   for i in 0...12
